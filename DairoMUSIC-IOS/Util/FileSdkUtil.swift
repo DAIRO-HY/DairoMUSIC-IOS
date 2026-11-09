@@ -64,14 +64,73 @@ enum FileSdkUtil {
         return try? FileSdkUtil.get().cachedPath(url: source.url, options: source.options)
     }
 
+    /// 请求图片用的连接,请求的都是SDK的本机服务,真正的下载并发由SDK控制
+    /// URLSession.shared在iOS上同一个地址最多同时4个连接,列表里的图片会排队等待
+    private static let imageSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.httpMaximumConnectionsPerHost = 64
+
+        //SDK已经缓存了图片,这里不用再缓存
+        config.urlCache = nil
+        return URLSession(configuration: config)
+    }()
+
     /**
-     获取无状态的本机地址,适合列表里大量的图片,连接断开时SDK会自动取消下载
+     读取图片数据,失败时重新获取一次地址再试(App挂起之后本机服务的端口可能被系统收回,SDK获取地址时会自动重启服务)
+     - Parameter url: 图片的下载地址
      */
-    static func localUrl(_ source: FileSource) -> URL? {
-        guard let url = try? FileSdkUtil.get().localUrl(url: source.url, options: source.options) else{
+    static func imageData(_ url: String) async -> Data? {
+        for _ in 0 ..< 2{
+            if let data = await FileSdkUtil.imageDataOnce(url){
+                return data
+            }
+            if Task.isCancelled{
+                return nil
+            }
+        }
+        return nil
+    }
+
+    /**
+     读取一次图片数据:已经缓存好的直接读文件,不经过本机HTTP服务;没有缓存或者正在下载时通过本机HTTP服务下载
+     */
+    private static func imageDataOnce(_ url: String) async -> Data? {
+        let source = FileSource.image(url)
+        let local = await Task.detached{
+            return try? FileSdkUtil.get().localSource(url: source.url, options: source.options)
+        }.value
+        switch local{
+        case .file(let path):
+            let data = await Task.detached{
+                return FileManager.default.contents(atPath: path)
+            }.value
+            if let data{
+                return data
+            }
+
+            //拿到路径之后文件刚好被清理了,重新获取会返回本机HTTP地址
+            let retry = await Task.detached{
+                return try? FileSdkUtil.get().localSource(url: source.url, options: source.options)
+            }.value
+            guard case .http(let httpUrl) = retry else{
+                return nil
+            }
+            return await FileSdkUtil.httpData(httpUrl)
+        case .http(let httpUrl):
+            return await FileSdkUtil.httpData(httpUrl)
+        case nil:
             return nil
         }
-        return URL(string: url)
+    }
+
+    /**
+     通过本机HTTP服务下载,状态码不是200时返回nil
+     */
+    private static func httpData(_ url: String) async -> Data? {
+        guard let url = URL(string: url), let (data, response) = try? await FileSdkUtil.imageSession.data(from: url) else{
+            return nil
+        }
+        return (response as? HTTPURLResponse)?.statusCode == 200 ? data : nil
     }
 
     /**

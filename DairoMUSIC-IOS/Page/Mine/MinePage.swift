@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DairoFileSDK
 import DairoUI_IOS
 
 struct MinePage: View {
@@ -95,6 +96,13 @@ struct MinePage: View {
                         SettingNavigationLink("关于"){
                             AboutPage().anyView
                         }.icon("info.circle.fill", backgroundColor: Color.gray)
+
+                        //临时调试入口:排查后台放久之后本机HTTP服务失效的问题,找到原因之后删除
+                        if let sdk = try? FileSdkUtil.get(){
+                            SettingNavigationLink("SDK调试"){
+                                FileSdkDebugView(sdk: sdk).anyView
+                            }.icon("ladybug.fill", backgroundColor: Color.gray)
+                        }
                     }
                     SettingGroup{
                         SettingButtonSingle("退出登录"){

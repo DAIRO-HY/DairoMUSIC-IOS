@@ -587,20 +587,21 @@ final class PlayerManager: ObservableObject {
         }
         self.artworkUrl = music.logo
         self.artwork = nil
-        guard let logo = music.logo, let url = FileSdkUtil.localUrl(FileSource.image(logo)) else{
+        guard let logo = music.logo else{
             return
         }
-        URLSession.shared.dataTask(with: url){ [weak self] data, _, _ in
-            guard let data, let image = UIImage(data: data) else{
+        Task{ @MainActor [weak self] in
+            guard let data = await FileSdkUtil.imageData(logo) else{
                 return
             }
-            DispatchQueue.main.async {
-                guard let self, self.artworkUrl == logo else{
-                    return
-                }
-                self.artwork = MPMediaItemArtwork(boundsSize: image.size){ _ in image }
-                self.updateNowPlaying()
+            let image = await Task.detached{
+                return UIImage(data: data)
+            }.value
+            guard let self, let image, self.artworkUrl == logo else{
+                return
             }
-        }.resume()
+            self.artwork = MPMediaItemArtwork(boundsSize: image.size){ _ in image }
+            self.updateNowPlaying()
+        }
     }
 }
