@@ -57,6 +57,12 @@ final class PlayerManager: ObservableObject {
     /// 当前歌曲是否已经准备好开始播放,开始播放之后的失败不算断网
     private var isStarted = false
 
+    /// 在线播放途中网络中断时等待缓冲的检查,恢复播放或者切换歌曲时取消
+    private var stallTask: Task<Void, Never>?
+
+    /// 在线播放途中等待缓冲的超时时间(秒)
+    private static let STALL_TIMEOUT_SECONDS: UInt64 = 5
+
     /// 在线播放开始之前的超时时间(秒),超时之后进入离线模式
     private static let START_TIMEOUT_SECONDS: UInt64 = 5
 
@@ -477,6 +483,26 @@ final class PlayerManager: ObservableObject {
         }
     }
 
+    /// 开始等待缓冲的超时检查,已经在检查时不重新开始
+    private func startStallTimeout(_ player: AVPlayer) {
+        if self.stallTask != nil{
+            return
+        }
+        self.stallTask = Task{ @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: PlayerManager.STALL_TIMEOUT_SECONDS * 1_000_000_000)
+            guard let self, !Task.isCancelled, self.player === player, player.timeControlStatus == .waitingToPlayAtSpecifiedRate else{
+                return
+            }
+            self.onStalled()
+        }
+    }
+
+    /// 在线播放途中网络中断,等待缓冲超时:提示并播放下一曲
+    /// 播放途中的超时不算断网,不进入离线模式
+    private func onStalled() {
+        self.onError("网络连接超时")
+    }
+
     /// 在线播放开始之前超时或者失败,进入离线模式,当前歌曲按离线规则重新加载
     /// 播放途中的失败不算断网
     private func onStartFailed(startTime: Double) {
@@ -556,9 +582,20 @@ final class PlayerManager: ObservableObject {
 
         //来电等情况系统会暂停播放,这里以播放器的实际状态为准
         player.publisher(for: \.timeControlStatus).receive(on: DispatchQueue.main).sink{ [weak self] status in
-            self?.isPlaying = status != .paused
-            self?.isLoading = status == .waitingToPlayAtSpecifiedRate
-            self?.updateNowPlaying()
+            guard let self else{
+                return
+            }
+            self.isPlaying = status != .paused
+            self.isLoading = status == .waitingToPlayAtSpecifiedRate
+
+            //在线播放途中一直在等待缓冲(网络中断)时,超时之后处理,不能一直卡在那里
+            if isOnline && self.isStarted && status == .waitingToPlayAtSpecifiedRate{
+                self.startStallTimeout(player)
+            } else {
+                self.stallTask?.cancel()
+                self.stallTask = nil
+            }
+            self.updateNowPlaying()
         }.store(in: &self.cancellables)
         item.publisher(for: \.status).receive(on: DispatchQueue.main).sink{ [weak self] status in
             if status == .readyToPlay{
@@ -617,6 +654,8 @@ final class PlayerManager: ObservableObject {
     /// 释放当前歌曲的播放器
     private func releasePlayer() {
         self.isStarted = false
+        self.stallTask?.cancel()
+        self.stallTask = nil
         self.startTimeoutTask?.cancel()
         self.startTimeoutTask = nil
         self.detailRequest?.cancel()

@@ -26,11 +26,11 @@ class MusicInfoViewModel: ObservableObject {
     /// 这首歌的所有下载,包括还没有下载完成的,删除下载时选择
     @Published var downloads = [CacheInfo]()
 
-    /// 当前音质和文件大小:已经下载的显示下载的音质最好的文件,没有下载时显示按设置的播放音质选择的文件
+    /// 当前音质和文件大小,和播放时选择文件的规则一样
     @Published var displayFile: MusicFileModel?
 
-    /// 显示的文件是否是已经下载的
-    @Published var isDisplayDownloaded = false
+    /// 显示的文件的说明:已下载、已缓存,在线播放时为nil
+    @Published var displayTag: String?
 
     /// 可以收藏到的歌单
     var favoriteList: [FavoriteModel] {
@@ -50,7 +50,7 @@ class MusicInfoViewModel: ObservableObject {
         self.downloadedText = MusicDownloadUtil.downloadedText(self.music.id)
         let display = MusicFileResolver.displayFile(self.music)
         self.displayFile = display.file
-        self.isDisplayDownloaded = display.isDownloaded
+        self.displayTag = display.tag
     }
 
     /// 下载选择的音质
@@ -87,7 +87,13 @@ class MusicInfoViewModel: ObservableObject {
 
     /// 喜欢点击事件
     func onLikeClick(){
-        MusicShared.toggleLike(self.music)
+
+        //采集平台的歌曲加入曲库之后更新歌曲ID,否则按ID判断"我喜欢"状态时一直是没有喜欢
+        MusicShared.toggleLike(self.music){ musicId in
+            self.music.id = musicId
+            self.updateLike()
+            self.updateDownload()
+        }
     }
 
     /// 收藏到歌单

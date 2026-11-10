@@ -138,11 +138,17 @@ struct PlayingPage: View {
         } message: {
             Text("离线模式下只播放已经下载或缓存的歌曲，取消之后从下一首开始尝试在线播放")
         }
+        //弹出的页面用RootView包起来,Toast和Loading显示在弹出的页面上
         .sheet(isPresented: self.$showPlayList){
-            PlayListPage().presentationDetents([.medium, .large])
+            RootView{
+                PlayListPage()
+            }
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: self.$infoMusic){ music in
-            MusicInfoPage(music, favoriteId: self.player.favoriteId > 0 ? self.player.favoriteId : nil)
+            RootView{
+                MusicInfoPage(music, favoriteId: self.player.favoriteId > 0 ? self.player.favoriteId : nil)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: EventName.MUSIC_CHANGE)){ _ in
             self.likeVersion += 1

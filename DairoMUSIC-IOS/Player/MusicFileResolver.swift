@@ -24,18 +24,11 @@ struct LocalMusicFile {
 /**
  选择要播放的歌曲文件,切换歌曲和歌曲信息页使用同样的规则:
  1. 已经下载的歌曲,使用下载的文件,下载了多种音质时使用音质最好的
- 2. 没有下载的歌曲,按设置的播放音质从所有音质的文件里选择,已经缓存好的直接播放缓存文件
- 3. 离线时,设置的音质没有缓存的,使用已经缓存好的其他音质
+ 2. 已经缓存的文件里音质最好的,不低于设置的播放音质时,直接播放这个缓存文件(例如设置的是标准,超高品质已经缓存了)
+ 3. 都没有时,按设置的播放音质从所有音质的文件里选择,在线播放
+ 4. 离线时,设置的音质没有缓存的,使用已经缓存好的其他音质(包括比设置低的)
  */
 enum MusicFileResolver {
-
-    /// 已经下载的音质最好的文件
-    static func downloaded(_ music: MusicModel) -> LocalMusicFile? {
-        if music.id == 0{
-            return nil
-        }
-        return MusicFileResolver.best(music, FileSdkUtil.finishedMusics(music.id, onlyDownloaded: true))
-    }
 
     /// 本地可以直接播放的文件,不需要联网
     /// - Parameter anyQuality: 设置的音质没有缓存时,是否使用已经缓存的其他音质(离线时)
@@ -50,18 +43,24 @@ enum MusicFileResolver {
         if let downloaded = MusicFileResolver.best(music, finished.filter{ $0.mode == .save }){
             return downloaded
         }
-        if let file = music.settingFile, let info = finished.first(where: { FileSdkUtil.musicFileId($0.key) == file.id }), let path = info.path{
-            return LocalMusicFile(url: URL(fileURLWithPath: path), file: file, isDownloaded: false)
+        guard let cached = MusicFileResolver.best(music, finished) else{
+            return nil
         }
-        return anyQuality ? MusicFileResolver.best(music, finished) : nil
+
+        //缓存的音质不低于设置的音质时直接播放缓存
+        if let cachedRate = cached.file?.bitRate, cachedRate >= (music.settingFile?.bitRate ?? 0){
+            return cached
+        }
+        return anyQuality ? cached : nil
     }
 
-    /// 歌曲信息页显示的文件:已经下载的显示下载的音质最好的文件,没有下载时显示按设置的音质选择的文件
-    static func displayFile(_ music: MusicModel) -> (file: MusicFileModel?, isDownloaded: Bool) {
-        if let downloaded = MusicFileResolver.downloaded(music), let file = downloaded.file{
-            return (file, true)
+    /// 歌曲信息页显示的文件,和播放时的规则一样(不包括离线时使用比设置低的缓存)
+    /// - Returns: 文件和说明(已下载、已缓存,在线播放时为nil)
+    static func displayFile(_ music: MusicModel) -> (file: MusicFileModel?, tag: String?) {
+        guard let local = MusicFileResolver.local(music, anyQuality: false), let file = local.file else{
+            return (music.settingFile, nil)
         }
-        return (music.settingFile, false)
+        return (file, local.isDownloaded ? "已下载" : "已缓存")
     }
 
     /// 音质最好的文件,按比特率比较,文件信息里没有的(歌曲信息过期了)按文件大小比较

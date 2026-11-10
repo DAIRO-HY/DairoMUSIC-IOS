@@ -93,7 +93,7 @@ struct MusicInfoPage: View {
                     SettingText(title: "歌手：" + music.artistText)
                     SettingText(title: "专辑：" + (music.album ?? "未知专辑"))
                     SettingText(title: "最高音质：" + MusicModel.qualityText(music.maxBitRate))
-                    SettingText(title: "当前音质：" + MusicModel.qualityText(self.vm.displayFile?.bitRate) + (self.vm.isDisplayDownloaded ? "(已下载)" : ""))
+                    SettingText(title: "当前音质：" + MusicModel.qualityText(self.vm.displayFile?.bitRate) + (self.vm.displayTag.map{ "(" + $0 + ")" } ?? ""))
                     SettingText(title: "文件大小：" + (self.vm.displayFile.map{ $0.size.fileSize } ?? "未知"))
                     SettingText(title: "时长：" + (music.duration.map{ $0.timeFormat } ?? "未知"))
                 }

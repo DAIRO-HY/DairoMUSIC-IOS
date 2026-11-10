@@ -126,10 +126,21 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         XCTAssertTrue(self.app.textFields["例 192.168.1.100:8020"].waitForExistence(timeout: 10))
     }
 
-    /// 修改播放音质之后,下一首歌按新的音质播放,不用重新获取歌单
+    /// 修改播放音质之后,下一首歌按新的音质播放,不用重新获取歌单;更高音质已经缓存时直接使用缓存
     @MainActor
     func testQualitySwitch() throws {
         self.loginTemp()
+
+        //先清理缓存,之前的测试缓存过的歌曲会影响结果
+        self.app.buttons["我的"].tap()
+        self.app.button(startsWith: "缓存管理").tap()
+        XCTAssertTrue(self.app.buttons["清理全部缓存"].waitForExistence(timeout: 5))
+        self.app.buttons["清理全部缓存"].tap()
+        let clearAlert = self.app.alerts.firstMatch
+        XCTAssertTrue(clearAlert.waitForExistence(timeout: 5))
+        clearAlert.buttons["清理"].tap()
+        self.waitToast("清理完成")
+        self.back()
 
         //播放音质改成标准,播放歌单里的第一首
         self.setBitRate("标准(128K)")
@@ -141,7 +152,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.app.staticTexts["海风"].tap()
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
         self.app.cells.containing(.staticText, identifier: "海风").firstMatch.buttons["更多操作"].tap()
-        XCTAssertEqual(self.currentQuality(), "当前音质：标准(128K)")
+        XCTAssertTrue(self.currentQuality().hasPrefix("当前音质：标准("), self.currentQuality())
         self.shot("标准音质")
         self.dismissSheet()
         self.back()
@@ -153,12 +164,23 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.hittableButton("下一曲").tap()
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
         self.hittableButton("更多操作").tap()
-        XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)")
+        XCTAssertTrue(self.currentQuality().hasPrefix("当前音质：超高品质(320K)"), self.currentQuality())
         self.shot("下一首超高品质")
         self.dismissSheet()
+
+        //等超高品质缓存完成之后改回标准,这首歌已经缓存了更高的音质,直接使用缓存
+        Thread.sleep(forTimeInterval: 8)
         self.hittableButton("暂停").tap()
         self.app.buttons["关闭"].tap()
-        self.app.buttons["我的"].tap()
+        self.setBitRate("标准(128K)")
+        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
+        self.hittableButton("更多操作").tap()
+        XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)(已缓存)")
+        self.shot("已缓存更高音质")
+        self.dismissSheet()
+        self.app.buttons["关闭"].tap()
+        self.setBitRate("超高品质(320K)")
         self.logout()
     }
 

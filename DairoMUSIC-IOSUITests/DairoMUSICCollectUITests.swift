@@ -121,4 +121,27 @@ final class DairoMUSICCollectUITests: DairoUITestCase {
         self.app.buttons["我的"].tap()
         self.logout()
     }
+
+    /// 在歌曲信息页"喜欢"还没有入库的采集平台歌曲,加入曲库之后按钮变成"取消喜欢",再点可以取消
+    @MainActor
+    func testLikeCollectSong() throws {
+        self.loginTemp()
+        self.app.buttons["搜索歌曲、歌手"].tap()
+        let searchField = self.app.textFields["搜索歌曲、歌手"]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.typeText("周杰伦 晴天\n")
+        let row = self.app.cells.containing(.staticText, identifier: "YT").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 60))
+        row.buttons["更多操作"].tap()
+        XCTAssertTrue(self.app.buttons["喜欢"].waitForExistence(timeout: 5))
+        self.app.buttons["喜欢"].tap()
+        XCTAssertTrue(self.app.buttons["取消喜欢"].waitForExistence(timeout: 30), "喜欢之后应该显示取消喜欢")
+        self.shot("喜欢采集平台的歌曲")
+        self.app.buttons["取消喜欢"].tap()
+        XCTAssertTrue(self.app.buttons["喜欢"].waitForExistence(timeout: 10), "取消喜欢之后应该显示喜欢")
+        self.dismissSheet()
+        self.back()
+        self.app.buttons["我的"].tap()
+        self.logout()
+    }
 }

@@ -74,7 +74,8 @@ enum MusicShared {
     }
 
     /// 添加或删除"我喜欢"
-    static func toggleLike(_ music: MusicModel) {
+    /// - Parameter onAdded: 添加到"我喜欢"成功之后回调歌曲ID,采集平台的歌曲加入曲库之后才有ID
+    static func toggleLike(_ music: MusicModel, onAdded: @escaping (_ musicId: Int64) -> Void = { _ in }) {
         guard let like = FavoriteShared.likeFavorite else{
             FavoriteShared.loadInBackground()
             Toast.show("歌单还没有加载完成,请稍后再试")
@@ -83,7 +84,7 @@ enum MusicShared {
         if music.id != 0 && MusicShared.isLike(music.id){
             FavoriteShared.removeMusic(musicId: music.id, favoriteId: like.id)
         } else {
-            FavoriteShared.addMusic(music, favoriteId: like.id)
+            FavoriteShared.addMusic(music, favoriteId: like.id, success: onAdded)
         }
     }
 

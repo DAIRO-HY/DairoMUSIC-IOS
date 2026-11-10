@@ -37,8 +37,11 @@ struct SearchPage: View {
         }
         .navigationTitle("搜索")
         .navigationBarTitleDisplayMode(.inline)
+        //弹出的页面用RootView包起来,Toast和Loading显示在弹出的页面上
         .sheet(item: self.$infoMusic){ music in
-            MusicInfoPage(music, favoriteId: nil)
+            RootView{
+                MusicInfoPage(music, favoriteId: nil)
+            }
         }
         .onAppear{
             if !self.vm.isSearched{

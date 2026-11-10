@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DairoUI_IOS
 
 /// 迷你播放条,点击打开播放页面,没有歌曲时不显示
 struct MiniPlayerBar: View {
@@ -53,11 +54,17 @@ struct MiniPlayerBar: View {
             .onTapGesture {
                 self.showPlaying = true
             }
+            //弹出的页面盖在首页上面,用RootView包起来,Toast和Loading显示在弹出的页面上
             .fullScreenCover(isPresented: self.$showPlaying){
-                PlayingPage()
+                RootView{
+                    PlayingPage()
+                }
             }
             .sheet(isPresented: self.$showPlayList){
-                PlayListPage().presentationDetents([.medium, .large])
+                RootView{
+                    PlayListPage()
+                }
+                .presentationDetents([.medium, .large])
             }
         }
     }

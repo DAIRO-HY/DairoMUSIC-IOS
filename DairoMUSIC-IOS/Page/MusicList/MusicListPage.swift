@@ -85,8 +85,11 @@ struct MusicListPage: View {
                 .accessibilityLabel("清空最近播放")
             }
         }
+        //弹出的页面用RootView包起来,Toast和Loading显示在弹出的页面上
         .sheet(item: self.$infoMusic){ music in
-            MusicInfoPage(music, favoriteId: self.vm.isMine ? self.vm.favoriteId : nil)
+            RootView{
+                MusicInfoPage(music, favoriteId: self.vm.isMine ? self.vm.favoriteId : nil)
+            }
         }
         .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
             ForEach(MusicDownloadUtil.QUALITIES, id: \.self){ quality in
