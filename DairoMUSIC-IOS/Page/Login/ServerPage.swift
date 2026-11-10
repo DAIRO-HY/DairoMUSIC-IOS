@@ -31,8 +31,8 @@ struct ServerPage: View {
                                 .padding(32)
                         }.frame(maxWidth: .infinity)
                     }
-                    SettingGroup(footer: "请输入DairoMUSIC服务器的地址,默认端口是\(Const.DEFAULT_PORT)"){
-                        SettingTextField(title: "服务器", text: self.$vm.domain, placeholder: "例 192.168.1.100:\(Const.DEFAULT_PORT)")
+                    SettingGroup(footer: "请输入DairoMUSIC服务器的地址，例如 192.168.1.100:8020、https://music.example.com。没有写http://或https://时按http://连接", allowAttributedFooter: false){
+                        SettingTextField(title: "服务器", text: self.$vm.domain, placeholder: "例 192.168.1.100:8020")
                     }
                     SettingGroup{
                         SettingButtonSingle("下一步", action: self.vm.onNextClick)
@@ -53,6 +53,11 @@ struct ServerPage: View {
                 }
             }
             .onSubmit(self.vm.onNextClick)
+
+            //固定显示在屏幕最底部,输入服务器地址时隐藏
+            .overlay(alignment: .bottom){
+                ServerGithubLink("还没有服务器？可以按照这里的说明部署")
+            }
             .background(
                 NavigationLink(destination: LoginPage(self.vm, isRoot: false), isActive: self.$vm.showLogin){
                     EmptyView()

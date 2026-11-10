@@ -13,8 +13,8 @@ enum Const {
     ///客户端标识 0:WEB 1:Android 2:IOS 3:Windows 4:Mac 5:Linux
     static let CLIENT_FLAG = 2
 
-    ///服务器默认端口
-    static let DEFAULT_PORT = 8020
+    ///服务器端的GitHub项目地址
+    static let SERVER_GITHUB_URL = "https://github.com/DAIRO-HY/DairoMUSIC"
 
     ///获取设备唯一标识
     static var deviceId: String {

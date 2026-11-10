@@ -50,6 +50,10 @@ struct AboutPage: View {
                 }
             }
         }
+        //固定显示在屏幕最底部
+        .overlay(alignment: .bottom){
+            ServerGithubLink("服务器端项目地址")
+        }
         .alert("发现新版本 \(self.newVersion?.versionName ?? "")", isPresented: Binding(get: { self.newVersion != nil }, set: { if !$0 { self.newVersion = nil } })){
             Button("去更新"){
                 if let url = self.newVersion.flatMap({ URL(string: $0.url) }){
