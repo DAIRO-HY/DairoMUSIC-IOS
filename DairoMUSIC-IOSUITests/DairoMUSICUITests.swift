@@ -151,11 +151,16 @@ final class DairoMUSICUITests: DairoUITestCase {
         self.app.buttons["提交"].tap()
         XCTAssertTrue(self.app.buttons["关于"].waitForExistence(timeout: 10))
 
-        //关于,检查更新
+        //关于,隐私政策;上架版本不显示检查更新
         self.app.buttons["关于"].tap()
-        self.app.buttons["检查更新"].tap()
-        XCTAssertTrue(self.app.staticTexts["已经是最新版本"].waitForExistence(timeout: 10))
+        XCTAssertTrue(self.app.button(startsWith: "隐私政策").waitForExistence(timeout: 5))
+        XCTAssertFalse(self.app.buttons["检查更新"].exists)
         self.shot("关于")
+        self.app.button(startsWith: "隐私政策").tap()
+        XCTAssertTrue(self.app.navigationBars["隐私政策"].waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.staticTexts["注销账号"].exists)
+        self.shot("隐私政策")
+        self.back()
         self.app.navigationBars.buttons.element(boundBy: 0).tap()
 
         //账号列表

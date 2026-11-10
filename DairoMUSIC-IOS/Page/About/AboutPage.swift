@@ -8,8 +8,11 @@
 import SwiftUI
 import DairoUI_IOS
 
-/// 关于,版本信息、检查更新、免责声明
+/// 关于,版本信息、免责声明、隐私政策
 struct AboutPage: View {
+
+    /// 免责声明
+    private static let DISCLAIMER = "DAIRO音乐是一个音乐播放客户端，本身不提供任何音乐、视频内容。App里播放和下载的内容全部来自你自己填写的服务器，由服务器的管理者负责。请只播放和下载你有权使用的内容，尊重音乐版权，不要用于商业用途。"
 
     /// 检查到的新版本
     @State private var newVersion: AppVersionModel?
@@ -28,12 +31,18 @@ struct AboutPage: View {
                     .frame(maxWidth: .infinity)
                     .padding(24)
                 }
+                //App Store审核不允许引导到App Store以外的地方更新,上架版本暂时不显示检查更新
+                //SettingGroup{
+                //    SettingButton("检查更新", action: self.onCheckClick)
+                //}
                 SettingGroup{
-                    SettingButton("检查更新", action: self.onCheckClick)
+                    SettingNavigationLink("隐私政策"){
+                        PrivacyPage().anyView
+                    }
                 }
                 SettingGroup(header: "免责声明"){
                     SettingCustomView{
-                        Text("DAIRO音乐是一个音乐播放客户端，播放的内容来自你连接的服务器。音乐版权归各权利人所有，请支持正版，不要用于商业用途。")
+                        Text(AboutPage.DISCLAIMER)
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .padding()

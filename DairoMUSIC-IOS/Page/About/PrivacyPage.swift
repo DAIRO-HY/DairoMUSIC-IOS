@@ -1,0 +1,77 @@
+//
+//  PrivacyPage.swift
+//  DairoMUSIC-IOS
+//
+//  Created by zhoulq on 2026/11/11.
+//
+
+import SwiftUI
+
+/// 隐私政策,内容和项目根目录的PRIVACY.md一致,修改时两边一起改
+struct PrivacyPage: View {
+
+    /// 更新日期
+    private static let UPDATE_DATE = "2026年11月11日"
+
+    /// 每一节的标题和内容
+    private static let SECTIONS: [(title: String, content: String)] = [
+        ("说明", """
+        DAIRO音乐（以下简称"本App"）是一个音乐播放客户端，本身不提供任何音乐、视频内容，也没有开发者运营的服务器。使用本App需要填写服务器地址，你的账号和数据只保存在你填写的服务器上，由该服务器的管理者负责保管。
+        """),
+        ("我们会收集哪些信息", """
+        以下信息只发送到你填写的服务器，只用于本App的功能：
+        · 账号信息：邮箱、密码（只用于登录验证）、昵称、头像。
+        · 设备标识：经过处理（MD5）的设备标识，用于免注册使用时识别设备，不能用来追踪你。
+        · 你创建的内容：歌单、歌单封面、喜欢的歌曲，以及你提交的意见反馈、歌曲纠错和投诉。
+        """),
+        ("保存在手机上的信息", """
+        App的设置、登录状态、最近播放记录，以及缓存和下载的歌曲、视频、图片只保存在你的手机上，不会上传。卸载App时会一起删除，也可以在"缓存管理"里删除。
+        """),
+        ("权限", """
+        · 相册：选择头像和歌单封面；把下载的视频保存到相册（只需要添加照片的权限）。
+        · 本地网络：连接部署在局域网里的服务器。
+        以上权限只在你使用对应功能时才会请求，可以随时在系统设置里关闭。
+        """),
+        ("我们不会做的事", """
+        · 不追踪你，不收集位置、通讯录等与功能无关的信息。
+        · 不包含广告、统计分析等第三方SDK。
+        · 不会把你的信息出售或提供给第三方。
+        """),
+        ("注销账号", """
+        你可以在"我的 → 个人资料 → 注销账号"里注销账号，注销之后服务器会删除你的账号和歌单。
+        """),
+        ("联系我们", """
+        对本隐私政策有疑问时，可以通过App里的"意见反馈"联系我们。
+        """)
+    ]
+
+    var body: some View {
+        ScrollView{
+            VStack(alignment: .leading, spacing: 20){
+                Text("更新日期：" + PrivacyPage.UPDATE_DATE)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                ForEach(PrivacyPage.SECTIONS, id: \.title){ section in
+                    VStack(alignment: .leading, spacing: 8){
+                        Text(section.title).font(.headline)
+                        Text(section.content)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: 700, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .navigationTitle("隐私政策")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#Preview {
+    NavigationView{
+        PrivacyPage()
+    }
+}
