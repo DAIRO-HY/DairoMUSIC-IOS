@@ -34,7 +34,8 @@ class DairoUITestCase: XCTestCase {
         self.app = XCUIApplication()
 
         //播放页的引导只在第一次进入时显示,会挡住其他测试,通过启动参数跳过,引导单独测试
-        self.app.launchArguments = ["-PLAYING_GUIDE_SHOWN", "YES"]
+        //视频控制按钮默认3秒自动隐藏,测试时找按钮比较慢,加长到10秒
+        self.app.launchArguments = ["-PLAYING_GUIDE_SHOWN", "YES", "-VIDEO_CONTROLS_HIDE_SECONDS", "10"]
         self.app.launch()
     }
 

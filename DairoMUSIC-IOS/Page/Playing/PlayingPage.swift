@@ -94,11 +94,23 @@ struct PlayingPage: View {
             }
             .foregroundColor(.white)
 
-            //全屏播放视频
-            if self.videoVm.isFullScreen, let player = self.videoVm.player{
+            //全屏播放视频,切换到下一个视频的过程中保持全屏,显示加载状态
+            if self.videoVm.isFullScreen{
                 ZStack{
                     Color.black.ignoresSafeArea()
-                    VideoPlayerView(player: player, state: self.videoVm.state, isFullScreen: true, onFullScreenClick: self.videoVm.exitFullScreen)
+                    if let player = self.videoVm.player{
+                        VideoPlayerView(player: player, state: self.videoVm.state, isFullScreen: true, onFullScreenClick: self.videoVm.exitFullScreen)
+                    } else {
+                        VStack(spacing: 16){
+                            if self.videoVm.isWaiting{
+                                ProgressView().tint(.white)
+                            }
+                            Text(self.videoVm.tip ?? "").font(.subheadline).multilineTextAlignment(.center)
+                            Button("退出全屏", action: self.videoVm.exitFullScreen)
+                                .buttonStyle(.bordered)
+                        }
+                        .padding()
+                    }
                 }
                 .zIndex(1)
             }

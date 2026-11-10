@@ -192,6 +192,34 @@ enum FileSdkUtil {
     }
 
     /**
+     视频文件缓存key的前缀,后面加文件ID;同一首歌不同清晰度的视频前缀相同
+     */
+    static func videoKeyPrefix(_ musicId: Int64) -> String {
+        return "/video/\(musicId)/file/"
+    }
+
+    /**
+     视频清晰度的名称,文件名里用来区分清晰度
+     */
+    static func videoQualityText(_ quality: Int) -> String {
+        return quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
+    }
+
+    /**
+     已经下载或者边播边缓存完成的视频
+     - Parameter quality: 清晰度,为nil时不限清晰度,有多个时优先永久下载的
+     */
+    static func finishedVideo(_ musicId: Int64, quality: Int?) -> CacheInfo? {
+        let prefix = FileSdkUtil.videoKeyPrefix(musicId)
+        let qualityName = quality.map{ "[" + FileSdkUtil.videoQualityText($0) + "]" }
+        return FileSdkUtil.list(group: FileSdkUtil.GROUP_VIDEO, mode: nil)
+            .filter{ $0.key.hasPrefix(prefix) && $0.state == .finish && $0.path != nil }
+            .filter{ info in qualityName.map{ (info.name ?? "").contains($0) } ?? true }
+            .sorted{ ($0.mode == .save ? 0 : 1) < ($1.mode == .save ? 0 : 1) }
+            .first
+    }
+
+    /**
      添加永久保存的后台下载任务,已经缓存完成时直接转为永久保存,不会重新下载
      */
     @discardableResult
@@ -212,6 +240,14 @@ enum FileSdkUtil {
      - Parameter group: 分组
      */
     static func downloads(group: String) -> [CacheInfo] {
+        return FileSdkUtil.list(group: group, mode: .save)
+    }
+
+    /**
+     当前服务器的缓存记录,包括还没有下载完成的,最近添加的在前面
+     - Parameter mode: 缓存方式,为nil时包括缓存和永久下载
+     */
+    private static func list(group: String, mode: CacheMode?) -> [CacheInfo] {
         guard let sdk = try? FileSdkUtil.get() else{
             return []
         }
@@ -220,7 +256,7 @@ enum FileSdkUtil {
         var offset: UInt64 = 0
         let limit: UInt64 = 500
         while true{
-            guard let page = try? sdk.list(query: CacheQuery(group: group, mode: .save, offset: offset, limit: limit)) else{
+            guard let page = try? sdk.list(query: CacheQuery(group: group, mode: mode, offset: offset, limit: limit)) else{
                 break
             }
             result.append(contentsOf: page.filter{ $0.namespace == serverId })
@@ -345,15 +381,22 @@ struct FileSource {
         return nil
     }
 
-    /// 歌曲视频,用文件ID作为缓存key,换了地址之后缓存和下载依然有效
+    /// 歌曲视频,用歌曲ID和文件ID作为缓存key,换了地址之后缓存和下载依然有效,没有网络时可以按歌曲ID找到缓存好的视频
     static func video(_ file: VideoFileModel, music: MusicModel) -> FileSource? {
         guard let url = file.url, !url.isEmpty else{
             return nil
         }
-        let quality = file.quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
         return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_VIDEO, namespace: SettingShared.serverId,
-                                                     cacheKey: "/video/file/\(file.id)", name: "\(music.nameText) - \(music.artistText) [\(quality)].mp4",
+                                                     cacheKey: FileSdkUtil.videoKeyPrefix(music.id) + "\(file.id)",
+                                                     name: "\(music.nameText) - \(music.artistText) [\(FileSdkUtil.videoQualityText(file.quality))].mp4",
                                                      md5: file.md5, thumb: music.logo),
+                          ext: "mp4")
+    }
+
+    /// 已经缓存好的视频,重新生成访问参数,播放时直接读缓存文件
+    static func video(_ info: CacheInfo) -> FileSource {
+        return FileSource(url: info.url, options: Options(group: info.group, namespace: info.namespace, cacheKey: info.key,
+                                                          name: info.name, thumb: info.thumb),
                           ext: "mp4")
     }
 

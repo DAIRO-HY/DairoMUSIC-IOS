@@ -32,6 +32,13 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         Thread.sleep(forTimeInterval: 5)
         self.shot("视频播放中")
 
+        //控制按钮显示时同时显示分辨率和帧率,例如:1080P 30FPS
+        self.tapVideoControl(nil)
+        let format = self.app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "^(4K|2K|[0-9]+P)( [0-9]+FPS)?$")).firstMatch
+        XCTAssertTrue(format.waitForExistence(timeout: 5), "应该显示分辨率和帧率")
+        print("VIDEO-FORMAT=" + format.label)
+        self.shot("分辨率和帧率")
+
         //切换到原画
         self.app.buttons["清晰度"].tap()
         self.app.buttons["原画"].tap()
@@ -152,9 +159,8 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
 
         //点全屏按钮,iPhone上自动切换到横屏
         self.tapVideoControl("全屏")
-        Thread.sleep(forTimeInterval: 3)
         if UIDevice.current.userInterfaceIdiom != .pad{
-            XCTAssertTrue(self.isLandscape, "全屏时应该是横屏")
+            XCTAssertTrue(self.waitLandscape(true), "全屏时应该是横屏")
         }
         self.tapVideoControl(nil)
         XCTAssertTrue(self.app.buttons["退出全屏"].exists)
@@ -169,11 +175,25 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         Thread.sleep(forTimeInterval: 3)
         self.shot("全屏拖动进度")
 
+        //全屏时播放结束,自动播放下一个视频(另一首稻香),依然全屏
+        if !slider.isHittable{
+            self.tapVideoControl(nil)
+        }
+        slider.adjust(toNormalizedSliderPosition: 0.995)
+        let nextTitle = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Jay Chou")).firstMatch
+        XCTAssertTrue(nextTitle.waitForExistence(timeout: 30), "播放结束之后应该播放下一个视频")
+        XCTAssertTrue(self.app.otherElements["视频"].waitForExistence(timeout: 30))
+        if UIDevice.current.userInterfaceIdiom != .pad{
+            XCTAssertTrue(self.waitLandscape(true), "播放下一个视频时应该依然全屏横屏")
+        }
+        self.tapVideoControl(nil)
+        XCTAssertTrue(self.app.buttons["退出全屏"].exists, "播放下一个视频时应该依然全屏")
+        self.shot("全屏播放下一个视频")
+
         //退出全屏,iPhone上回到竖屏,视频继续播放
         self.tapVideoControl("退出全屏")
-        Thread.sleep(forTimeInterval: 3)
         if UIDevice.current.userInterfaceIdiom != .pad{
-            XCTAssertFalse(self.isLandscape, "退出全屏之后应该回到竖屏")
+            XCTAssertTrue(self.waitLandscape(false), "退出全屏之后应该回到竖屏")
         }
         XCTAssertTrue(self.app.buttons["下一个视频"].waitForExistence(timeout: 5))
         XCTAssertTrue(self.app.otherElements["视频"].exists, "退出全屏之后视频不能是黑屏")
@@ -181,6 +201,44 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         XCTAssertTrue(self.app.buttons["暂停视频"].waitForExistence(timeout: 2) || self.app.activityIndicators.firstMatch.exists, "退出全屏之后视频应该继续播放")
         self.shot("退出全屏")
         self.closeVideoAndLogout()
+    }
+
+    /// 单曲循环时视频播放结束之后重新播放当前视频,不切换到下一个
+    @MainActor
+    func testVideoOneLoop() throws {
+        self.loginTemp()
+        self.openVideo("稻香", "稻香 周杰伦")
+
+        //回到封面页面把播放顺序切换到单曲循环:列表循环 -> 随机播放 -> 单曲循环
+        self.app.swipeLeft()
+        XCTAssertTrue(self.hittableButton("列表循环").waitForExistence(timeout: 5))
+        self.hittableButton("列表循环").tap()
+        self.hittableButton("随机播放").tap()
+        XCTAssertTrue(self.hittableButton("单曲循环").waitForExistence(timeout: 5))
+        self.app.swipeRight()
+        self.waitVideo()
+        Thread.sleep(forTimeInterval: 3)
+
+        //拖到最后,播放结束之后重新播放同一个视频
+        self.tapVideoControl(nil)
+        self.app.sliders["视频进度"].adjust(toNormalizedSliderPosition: 0.995)
+        Thread.sleep(forTimeInterval: 8)
+        let title = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "稻香 周杰伦")).firstMatch
+        XCTAssertTrue(title.exists && title.isHittable, "单曲循环时不应该切换到下一个视频")
+        self.tapVideoControl(nil)
+        let progress = Double((self.app.sliders["视频进度"].value as? String ?? "").replacingOccurrences(of: "%", with: "")) ?? 100
+        XCTAssertLessThan(progress, 50, "单曲循环时应该从头重新播放")
+        XCTAssertTrue(self.app.buttons["暂停视频"].exists, "重新播放之后应该是播放状态")
+        self.shot("单曲循环重新播放")
+
+        //恢复列表循环
+        self.app.swipeLeft()
+        self.hittableButton("单曲循环").tap()
+        XCTAssertTrue(self.hittableButton("列表循环").waitForExistence(timeout: 5))
+        self.app.buttons["关闭"].tap()
+        self.back()
+        self.app.buttons["我的"].tap()
+        self.logout()
     }
 
     /// 老歌第一次打开视频页面时服务器开始采集,页面显示采集、转码的提示,完成之后自动播放
@@ -306,6 +364,18 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
             }
         }
         XCTFail("没有找到视频控制按钮:" + (label ?? ""))
+    }
+
+    /// 等屏幕旋转完成,最多等6秒
+    /// - Parameter landscape: true:等横屏 false:等竖屏
+    private func waitLandscape(_ landscape: Bool) -> Bool {
+        for _ in 0 ..< 12{
+            if self.isLandscape == landscape{
+                return true
+            }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return false
     }
 
     /// 屏幕是否横向显示,窗口的frame不随方向变化,用截图的宽高判断

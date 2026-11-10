@@ -6,7 +6,7 @@ struct VideoModel : Codable {
   	/** 原画 **/
   var original: VideoFileModel?
 
-  	/** 流畅,原画不高于720p时和原画是同一个文件 **/
+  	/** 流畅(480p 25fps),原画不高于480p 25fps时和原画是同一个文件 **/
   var smooth: VideoFileModel?
 
 }

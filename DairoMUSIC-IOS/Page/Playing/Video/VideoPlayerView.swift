@@ -33,6 +33,12 @@ class VideoPlayerState: ObservableObject {
     /// 是否是竖向的视频,全屏时竖向的视频不切换到横屏
     @Published private(set) var isPortraitVideo = false
 
+    /// 视频画面的尺寸,还没有加载时为0
+    @Published private(set) var videoSize = CGSize.zero
+
+    /// 视频帧率,还没有加载时为0
+    @Published private(set) var frameRate: Float = 0
+
     /// 当前的播放器
     private var player: AVPlayer?
 
@@ -66,7 +72,17 @@ class VideoPlayerState: ObservableObject {
         }.store(in: &self.cancellables)
         item.publisher(for: \.presentationSize).receive(on: DispatchQueue.main).sink{ [weak self] size in
             self?.isPortraitVideo = size.height > size.width
+            self?.videoSize = size
         }.store(in: &self.cancellables)
+
+        //帧率从视频轨道读取,在线视频需要等文件头加载完成
+        Task{ @MainActor [weak self] in
+            let tracks = try? await item.asset.loadTracks(withMediaType: .video)
+            guard let rate = try? await tracks?.first?.load(.nominalFrameRate), let self, self.player?.currentItem === item else{
+                return
+            }
+            self.frameRate = rate
+        }
         NotificationCenter.default.publisher(for: AVPlayerItem.didPlayToEndTimeNotification, object: item).receive(on: DispatchQueue.main).sink{ [weak self] _ in
             self?.isEnded = true
         }.store(in: &self.cancellables)
@@ -87,6 +103,44 @@ class VideoPlayerState: ObservableObject {
         self.isBuffering = false
         self.isEnded = false
         self.isPortraitVideo = false
+        self.videoSize = .zero
+        self.frameRate = 0
+    }
+
+    /// 分辨率和帧率,例如:1080P 30FPS、4K 60FPS,还没有加载时为nil
+    var formatText: String? {
+        guard let resolution = VideoPlayerState.resolutionText(self.videoSize) else{
+            return nil
+        }
+        if self.frameRate <= 0{
+            return resolution
+        }
+        return resolution + " \(Int(self.frameRate.rounded()))FPS"
+    }
+
+    /// 按长边判断分辨率,竖向和宽银幕的视频也能正确显示
+    static func resolutionText(_ size: CGSize) -> String? {
+        let long = max(size.width, size.height)
+        let short = min(size.width, size.height)
+        if long <= 0{
+            return nil
+        }
+        if long >= 3840{
+            return "4K"
+        }
+        if long >= 2560{
+            return "2K"
+        }
+        if long >= 1920{
+            return "1080P"
+        }
+        if long >= 1280{
+            return "720P"
+        }
+        if long >= 854{
+            return "480P"
+        }
+        return "\(Int(short))P"
     }
 
     /// 播放或暂停,播放结束之后从头开始播放
@@ -122,8 +176,11 @@ class VideoPlayerState: ObservableObject {
 /// 视频播放控件:画面、播放暂停按钮、进度条和全屏按钮,点击画面显示或隐藏控制按钮
 struct VideoPlayerView: View {
 
-    /// 播放时控制按钮自动隐藏的时间(秒)
-    private static let HIDE_CONTROLS_SECONDS: UInt64 = 3
+    /// 播放时控制按钮自动隐藏的时间(秒),默认3秒;UI测试时通过启动参数VIDEO_CONTROLS_HIDE_SECONDS加长,避免点击之前按钮就隐藏了
+    private static let HIDE_CONTROLS_SECONDS: UInt64 = {
+        let seconds = UserDefaults.standard.integer(forKey: "VIDEO_CONTROLS_HIDE_SECONDS")
+        return seconds > 0 ? UInt64(seconds) : 3
+    }()
 
     let player: AVPlayer
 
@@ -188,6 +245,20 @@ struct VideoPlayerView: View {
                 .accessibilityLabel(self.state.isPlaying ? "暂停视频" : "播放视频")
             }
             VStack{
+
+                //分辨率和帧率显示在左上角,和控制按钮一起显示、隐藏
+                if let formatText = self.state.formatText{
+                    HStack{
+                        Text(formatText)
+                            .font(.caption.bold().monospacedDigit())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(Color.black.opacity(0.4)))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, self.isFullScreen ? 16 : 8)
+                }
                 Spacer()
                 self.bottomBar
             }

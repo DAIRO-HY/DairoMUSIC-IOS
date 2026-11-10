@@ -16,8 +16,9 @@ import DairoUI_IOS
  播放页的视频
  切换到视频页面时暂停音乐,视频从头开始播放;视频播放时音乐一直暂停,离开视频页面时音乐保持暂停
  视频可能是后台单独上传的,和音乐的时间轴不一定同步,所以视频和音乐的播放进度互不影响
- 视频播放结束之后自动播放播放列表里下一个有视频的歌曲
- 默认在线播放,打开"视频边播边缓存"之后通过SDK播放;已经下载或缓存好的直接播放本地文件
+ 视频播放结束之后按播放顺序继续:单曲循环时重新播放,随机播放时随机选下一个有视频的歌曲,列表循环时播放下一个有视频的歌曲,全屏时保持全屏
+ 默认在线播放,打开"视频边播边缓存"之后通过SDK播放;已经下载或缓存好的直接播放本地文件,不请求服务器,没有网络时也能播放
+ 视频播放时禁止自动锁屏
  */
 class VideoViewModel: ObservableObject {
 
@@ -122,8 +123,9 @@ class VideoViewModel: ObservableObject {
         self.load()
     }
 
-    /// 离开视频页面,停止播放
+    /// 离开视频页面,退出全屏,停止播放
     func leave() {
+        self.exitFullScreen()
         self.stop()
     }
 
@@ -211,6 +213,12 @@ class VideoViewModel: ObservableObject {
             return
         }
         self.isOriginalOnly = false
+
+        //当前清晰度已经下载或缓存好的直接播放,不请求服务器
+        if let info = FileSdkUtil.finishedVideo(music.id, quality: self.quality){
+            self.play(FileSource.video(info))
+            return
+        }
         if music.videoState == 3 || music.videoState == 4{
             self.tip = "该歌曲没有视频"
             return
@@ -273,17 +281,28 @@ class VideoViewModel: ObservableObject {
             self.tip = "正在获取视频"
         }
         self.request = MusicApi.video(id: music.id).hide().fail{ [weak self] in
-            self?.isWaiting = false
-            self?.tip = $0.msg ?? "获取视频失败"
+            self?.onRequestError(music, msg: $0.msg ?? "获取视频失败")
         }.error{ [weak self] in
-            self?.isWaiting = false
-            self?.tip = $0
+            self?.onRequestError(music, msg: $0)
         }.send{ [weak self] video in
             guard let self, self.music?.id == music.id else{
                 return
             }
             self.onVideo(video, music: music)
         }
+    }
+
+    /// 获取视频信息失败(例如没有网络)时,有其他清晰度已经缓存好的先播放,没有时显示错误
+    private func onRequestError(_ music: MusicModel, msg: String) {
+        guard self.music?.id == music.id else{
+            return
+        }
+        if let info = FileSdkUtil.finishedVideo(music.id, quality: nil){
+            self.play(FileSource.video(info))
+            return
+        }
+        self.isWaiting = false
+        self.tip = msg
     }
 
     /// 处理视频信息
@@ -359,7 +378,6 @@ class VideoViewModel: ObservableObject {
         let player = AVPlayer(playerItem: item)
         item.publisher(for: \.status).receive(on: DispatchQueue.main).sink{ [weak self] status in
             if status == .failed{
-                self?.exitFullScreen()
                 self?.player = nil
                 self?.showTip("视频加载失败,请检查网络")
             }
@@ -369,30 +387,38 @@ class VideoViewModel: ObservableObject {
         }
         self.state.attach(player)
 
-        //视频播放时暂停音乐
-        self.state.$isPlaying.filter{ $0 }.sink{ _ in
-            if PlayerManager.shared.isPlaying{
+        //视频播放时暂停音乐,禁止自动锁屏
+        self.state.$isPlaying.sink{ isPlaying in
+            UIApplication.shared.isIdleTimerDisabled = isPlaying
+            if isPlaying && PlayerManager.shared.isPlaying{
                 PlayerManager.shared.pause()
             }
         }.store(in: &self.cancellables)
 
-        //播放结束之后自动播放下一个视频,没有下一个时停在结束的画面
+        //播放结束之后按播放顺序继续
         self.state.$isEnded.filter{ $0 }.receive(on: DispatchQueue.main).sink{ [weak self] _ in
-            self?.playNext()
+            self?.onEnded()
         }.store(in: &self.cancellables)
         AudioSessionUtil.exclusive()
         player.play()
         self.player = player
     }
 
-    /// 停止播放和查询
+    /// 播放结束:单曲循环时重新播放,其他按播放顺序播放下一个视频,播放列表里没有其他视频时重新播放
+    private func onEnded() {
+        if PlayerManager.shared.orderType == .ONE_LOOP || !self.playNext(){
+            self.state.playOrPause()
+        }
+    }
+
+    /// 停止播放和查询,全屏时保持全屏(播放下一个视频时依然全屏)
     private func stop() {
         self.pollTask?.cancel()
         self.pollTask = nil
         self.request?.cancel()
         self.request = nil
         self.cancellables.removeAll()
-        self.exitFullScreen()
+        UIApplication.shared.isIdleTimerDisabled = false
         self.state.detach()
         self.player?.pause()
         self.player = nil

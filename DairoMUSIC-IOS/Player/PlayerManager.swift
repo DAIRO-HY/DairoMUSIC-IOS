@@ -201,16 +201,16 @@ final class PlayerManager: ObservableObject {
         return (self.index + 1) % count
     }
 
-    /// 下一首有视频的歌曲序号,按列表顺序往后找,找不到时返回nil
+    /// 下一首有视频的歌曲序号,随机播放时随机选一首,其他按列表顺序往后找,没有其他有视频的歌曲时返回nil
     var nextVideoIndex: Int? {
-        let count = self.playList.count
-        for offset in 1 ..< max(count, 1){
-            let index = (self.index + offset) % count
-            if self.playList[index].videoState == 2{
-                return index
-            }
+        let indices = self.playList.indices.filter{ $0 != self.index && self.playList[$0].videoState == 2 }
+        if indices.isEmpty{
+            return nil
         }
-        return nil
+        if self.orderType == .RANDOM_LOOP{
+            return indices.randomElement()
+        }
+        return indices.first{ $0 > self.index } ?? indices.first
     }
 
     /// 切换当前歌曲但不播放音乐,视频页面切换下一个视频时使用
