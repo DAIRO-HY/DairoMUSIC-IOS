@@ -421,12 +421,6 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         return row.staticTexts.matching(title).firstMatch
     }
 
-    /// 点击迷你播放条打开播放页
-    private func openPlayingPage() {
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
-        XCTAssertTrue(self.app.buttons["关闭"].waitForExistence(timeout: 5))
-    }
-
     /// 等待视频开始播放
     private func waitVideo(timeout: TimeInterval = 60, file: StaticString = #filePath, line: UInt = #line) {
         //开始播放之后才显示视频播放控件,不允许下载视频时没有下载按钮,不能用下载按钮判断

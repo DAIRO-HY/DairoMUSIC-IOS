@@ -44,7 +44,7 @@ final class DairoMUSICCollectUITests: DairoUITestCase {
         self.shot("播放采集平台的歌曲")
 
         //打开播放页确认进度在走
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 2)
         self.shot("采集平台歌曲播放页")
@@ -77,6 +77,7 @@ final class DairoMUSICCollectUITests: DairoUITestCase {
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 30))
         Thread.sleep(forTimeInterval: 3)
         self.shot("从歌单播放")
+        self.closePlayingPage()
         self.back()
 
         //退出登录
@@ -112,7 +113,7 @@ final class DairoMUSICCollectUITests: DairoUITestCase {
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 180))
         Thread.sleep(forTimeInterval: 5)
         self.shot("采集完成开始播放")
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 2)
         self.shot("新歌播放页")

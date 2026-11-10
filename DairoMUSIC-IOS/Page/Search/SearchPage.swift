@@ -12,6 +12,9 @@ struct SearchPage: View {
 
     @StateObject private var vm = SearchViewModel()
 
+    /// 显示播放页面
+    @State private var showPlaying = false
+
     @ObservedObject private var player = PlayerManager.shared
 
     /// 要显示详情的歌曲
@@ -33,7 +36,7 @@ struct SearchPage: View {
             self.searchBar
         }
         .safeAreaInset(edge: .bottom, spacing: 0){
-            MiniPlayerBar().padding(.horizontal).padding(.bottom, 4)
+            MiniPlayerBar(showPlaying: self.$showPlaying).padding(.horizontal).padding(.bottom, 4)
         }
         .navigationTitle("搜索")
         .navigationBarTitleDisplayMode(.inline)
@@ -137,6 +140,9 @@ struct SearchPage: View {
             .onTapGesture {
                 self.isFocused = false
                 self.vm.play(list, index: i)
+
+                //点击歌曲之后打开播放页面
+                self.showPlaying = true
             }
         }
     }

@@ -121,6 +121,23 @@ class DairoUITestCase: XCTestCase {
         }
     }
 
+    /// 打开播放页面,从歌单、搜索结果点击歌曲之后已经自动打开时不处理,其他时候点击迷你播放条打开
+    func openPlayingPage() {
+        if self.app.buttons["关闭"].waitForExistence(timeout: 2){
+            return
+        }
+        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        XCTAssertTrue(self.app.buttons["关闭"].waitForExistence(timeout: 5))
+    }
+
+    /// 关闭播放页面,点击歌曲之后自动打开了播放页面,回到列表继续操作
+    func closePlayingPage() {
+        let close = self.app.buttons["关闭"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
+        XCTAssertFalse(close.waitForExistence(timeout: 2))
+    }
+
     /// 等待Toast提示
     func waitToast(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         if !self.app.staticTexts[text].waitForExistence(timeout: 10){

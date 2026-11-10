@@ -30,13 +30,13 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.shot("推荐歌单")
         self.app.staticTexts["海风"].tap()
 
-        //迷你播放条出现,正在播放
+        //点击歌曲之后打开播放页面,正在播放
         XCTAssertTrue(self.app.buttons["暂停"].waitForExistence(timeout: 15))
         Thread.sleep(forTimeInterval: 3)
         self.shot("播放中")
 
         //打开播放页
-        self.app.buttons["播放列表"].coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 2)
         self.shot("播放页")
@@ -151,6 +151,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         XCTAssertTrue(self.app.staticTexts["海风"].waitForExistence(timeout: 10))
         self.app.staticTexts["海风"].tap()
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
+        self.closePlayingPage()
         self.app.cells.containing(.staticText, identifier: "海风").firstMatch.buttons["更多操作"].tap()
         XCTAssertTrue(self.currentQuality().hasPrefix("当前音质：标准("), self.currentQuality())
         self.shot("标准音质")
@@ -159,7 +160,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
 
         //改成超高品质,播放下一首,下一首按超高品质
         self.setBitRate("超高品质(320K)")
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
         self.hittableButton("下一曲").tap()
         XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
@@ -173,7 +174,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.hittableButton("暂停").tap()
         self.app.buttons["关闭"].tap()
         self.setBitRate("标准(128K)")
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
         self.hittableButton("更多操作").tap()
         XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)(已缓存)")
@@ -229,6 +230,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
 
         //恢复设置,退出登录
         self.hittableButton("暂停").tap()
+        self.closePlayingPage()
         self.back()
         self.app.buttons["我的"].tap()
         self.app.button(startsWith: "缓存管理").tap()
@@ -256,7 +258,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         XCTAssertTrue(self.app.buttons["暂停"].waitForExistence(timeout: 15))
 
         //第一次打开播放页显示引导
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         let ok = self.app.buttons["知道了"]
         XCTAssertTrue(ok.waitForExistence(timeout: 5), "第一次进入播放页应该显示引导")
         XCTAssertTrue(self.app.staticTexts["视频"].exists && self.app.staticTexts["歌词"].exists)
@@ -271,7 +273,7 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.app.launchArguments = []
         self.app.launch()
         XCTAssertTrue(self.app.buttons["播放列表"].firstMatch.waitForExistence(timeout: 10))
-        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        self.openPlayingPage()
         XCTAssertTrue(self.app.buttons["关闭"].waitForExistence(timeout: 5))
         XCTAssertFalse(self.app.buttons["知道了"].waitForExistence(timeout: 2), "第二次进入播放页不应该再显示引导")
         self.shot("第二次进入播放页")

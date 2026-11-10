@@ -21,6 +21,9 @@ struct MusicListPage: View {
     /// 显示清空最近播放的确认框
     @State private var showClearAlert = false
 
+    /// 显示播放页面
+    @State private var showPlaying = false
+
     /// 显示全部下载的音质选择
     @State private var showDownloadPicker = false
 
@@ -48,6 +51,9 @@ struct MusicListPage: View {
                 }
                 .onTapGesture {
                     self.vm.play(i)
+
+                    //点击歌曲之后打开播放页面
+                    self.showPlaying = true
                 }
                 .swipeActions(edge: .trailing){
                     if self.vm.isMine{
@@ -65,7 +71,7 @@ struct MusicListPage: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0){
-            MiniPlayerBar().padding(.horizontal).padding(.bottom, 4)
+            MiniPlayerBar(showPlaying: self.$showPlaying).padding(.horizontal).padding(.bottom, 4)
         }
         .navigationTitle(self.vm.name)
         .navigationBarTitleDisplayMode(.inline)
