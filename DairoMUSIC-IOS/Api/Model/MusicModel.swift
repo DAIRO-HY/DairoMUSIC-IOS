@@ -18,14 +18,11 @@ struct MusicModel : Codable, Hashable {
   	/** 时长(毫秒) **/
   var duration: Int64?
 
-  	/** 最高音质 **/
-  var maxBitRate: Int
-
   	/** 所在的歌单ID,只有歌单里的歌曲才有 **/
   var favoriteId: Int64?
 
-  	/** 歌曲文件,为空表示还没有采集完成 **/
-  var file: MusicFileModel?
+  	/** 所有音质的歌曲文件,为空表示还没有采集完成 **/
+  var files: [MusicFileModel]?
 
   	/** 采集信息 **/
   var collect: MusicCollectModel?

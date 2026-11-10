@@ -22,6 +22,9 @@ struct DairoMusicApp: App {
         //提前创建SDK实例
         _ = try? FileSdkUtil.get()
 
+        //开始监听网络类型,切换歌曲时判断离线模式
+        _ = NetworkMonitor.shared
+
         //恢复上次的播放列表,不自动播放
         PlayerManager.shared.restore()
     }

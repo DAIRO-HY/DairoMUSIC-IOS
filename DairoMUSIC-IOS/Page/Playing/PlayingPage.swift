@@ -52,6 +52,9 @@ struct PlayingPage: View {
     /// 第一次进入播放页时提示左边是视频、右边是歌词
     @State private var showGuide = !SettingShared.playingGuideShown
 
+    /// 显示取消离线模式的确认框
+    @State private var showOfflineAlert = false
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -129,6 +132,12 @@ struct PlayingPage: View {
         }
         .statusBarHidden(self.videoVm.isFullScreen)
         .preferredColorScheme(.dark)
+        .alert("当前处于离线模式，是否取消离线模式？", isPresented: self.$showOfflineAlert){
+            Button("取消离线模式", action: self.player.exitOffline)
+            Button("保持", role: .cancel){}
+        } message: {
+            Text("离线模式下只播放已经下载或缓存的歌曲，取消之后从下一首开始尝试在线播放")
+        }
         .sheet(isPresented: self.$showPlayList){
             PlayListPage().presentationDetents([.medium, .large])
         }
@@ -254,6 +263,19 @@ struct PlayingPage: View {
                 Text(self.player.collectMsg ?? self.player.music?.artistAlbumText ?? "").font(.subheadline).opacity(0.7).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            //离线模式时显示,点击之后可以取消离线模式
+            if self.player.isOffline{
+                Button(action: {
+                    self.showOfflineAlert = true
+                }){
+                    Image(systemName: "wifi.slash")
+                        .font(.title3)
+                        .foregroundColor(.orange)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("离线模式")
+            }
             let isLike = self.isLike
             Button(action: {
                 if let music = self.player.music{

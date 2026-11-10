@@ -126,6 +126,59 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         XCTAssertTrue(self.app.textFields["例 192.168.1.100:8020"].waitForExistence(timeout: 10))
     }
 
+    /// 修改播放音质之后,下一首歌按新的音质播放,不用重新获取歌单
+    @MainActor
+    func testQualitySwitch() throws {
+        self.loginTemp()
+
+        //播放音质改成标准,播放歌单里的第一首
+        self.setBitRate("标准(128K)")
+        self.app.buttons["发现"].tap()
+        let favorite = self.app.buttons["测试推荐·中文"].firstMatch
+        XCTAssertTrue(favorite.waitForExistence(timeout: 10))
+        favorite.tap()
+        XCTAssertTrue(self.app.staticTexts["海风"].waitForExistence(timeout: 10))
+        self.app.staticTexts["海风"].tap()
+        XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
+        self.app.cells.containing(.staticText, identifier: "海风").firstMatch.buttons["更多操作"].tap()
+        XCTAssertEqual(self.currentQuality(), "当前音质：标准(128K)")
+        self.shot("标准音质")
+        self.dismissSheet()
+        self.back()
+
+        //改成超高品质,播放下一首,下一首按超高品质
+        self.setBitRate("超高品质(320K)")
+        self.app.buttons["播放列表"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: -4, dy: 0.5)).tap()
+        XCTAssertTrue(self.app.buttons["下一曲"].waitForExistence(timeout: 5))
+        self.hittableButton("下一曲").tap()
+        XCTAssertTrue(self.hittableButton("暂停").waitForExistence(timeout: 15))
+        self.hittableButton("更多操作").tap()
+        XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)")
+        self.shot("下一首超高品质")
+        self.dismissSheet()
+        self.hittableButton("暂停").tap()
+        self.app.buttons["关闭"].tap()
+        self.app.buttons["我的"].tap()
+        self.logout()
+    }
+
+    /// 在我的页面修改播放音质
+    private func setBitRate(_ label: String) {
+        self.app.buttons["我的"].tap()
+        let picker = self.app.button(startsWith: "播放音质")
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        picker.tap()
+        XCTAssertTrue(self.app.buttons[label].waitForExistence(timeout: 5))
+        self.app.buttons[label].tap()
+        XCTAssertTrue(self.app.button(startsWith: "播放音质").waitForExistence(timeout: 5))
+    }
+
+    /// 歌曲信息页的当前音质
+    private func currentQuality() -> String {
+        let text = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "当前音质：")).firstMatch
+        return text.waitForExistence(timeout: 5) ? text.label : ""
+    }
+
     /// 关闭"音乐边播边缓存"之后在线播放
     @MainActor
     func testMusicWithoutCache() throws {

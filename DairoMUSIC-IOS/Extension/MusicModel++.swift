@@ -36,6 +36,32 @@ extension MusicModel {
         return self.collect?.platform == other.collect?.platform && self.collect?.extra == other.collect?.extra
     }
 
+    /// 是否已经采集完成,有歌曲文件
+    var hasFile: Bool {
+        return !(self.files ?? []).isEmpty
+    }
+
+    /// 最高音质,还没有采集完成时为nil
+    var maxBitRate: Int? {
+        return self.files?.compactMap{ $0.bitRate }.max()
+    }
+
+    /// 按目标音质选择歌曲文件:不超过目标音质的最高音质,所有文件都超过时选最低音质
+    func file(bitRate target: Int) -> MusicFileModel? {
+        let files = (self.files ?? []).sorted{ ($0.bitRate ?? 0) < ($1.bitRate ?? 0) }
+        return files.last{ ($0.bitRate ?? 0) <= target } ?? files.first
+    }
+
+    /// 按设置的播放音质选择的歌曲文件
+    var settingFile: MusicFileModel? {
+        return self.file(bitRate: SettingShared.bitRate)
+    }
+
+    /// 按文件ID找歌曲文件
+    func file(id: Int64) -> MusicFileModel? {
+        return self.files?.first{ $0.id == id }
+    }
+
     /// 列表里使用的唯一标识,同一首歌在不同歌单里也算不同的条目
     var listId: String {
         if self.id != 0{

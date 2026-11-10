@@ -219,6 +219,16 @@ class VideoViewModel: ObservableObject {
             self.play(FileSource.video(info))
             return
         }
+
+        //离线模式(或者系统没有网络)时不请求服务器,播放已经缓存的其他清晰度
+        if PlayerManager.shared.isOffline || NetworkMonitor.shared.current == .none{
+            if let info = FileSdkUtil.finishedVideo(music.id, quality: nil){
+                self.play(FileSource.video(info))
+            } else {
+                self.tip = "离线模式下没有缓存的视频"
+            }
+            return
+        }
         if music.videoState == 3 || music.videoState == 4{
             self.tip = "该歌曲没有视频"
             return

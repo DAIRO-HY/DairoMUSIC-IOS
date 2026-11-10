@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DairoFileSDK
 import DairoUI_IOS
 
 class MusicInfoViewModel: ObservableObject {
@@ -22,6 +23,15 @@ class MusicInfoViewModel: ObservableObject {
     /// 下载状态:已下载、下载中,没有下载时为nil
     @Published var downloadedText: String?
 
+    /// 这首歌的所有下载,包括还没有下载完成的,删除下载时选择
+    @Published var downloads = [CacheInfo]()
+
+    /// 当前音质和文件大小:已经下载的显示下载的音质最好的文件,没有下载时显示按设置的播放音质选择的文件
+    @Published var displayFile: MusicFileModel?
+
+    /// 显示的文件是否是已经下载的
+    @Published var isDisplayDownloaded = false
+
     /// 可以收藏到的歌单
     var favoriteList: [FavoriteModel] {
         return FavoriteShared.list
@@ -31,13 +41,43 @@ class MusicInfoViewModel: ObservableObject {
         self.music = music
         self.favorite = favoriteId.flatMap{ FavoriteShared.byId($0) }
         self.updateLike()
-        self.downloadedText = MusicDownloadUtil.downloadedText(music.id)
+        self.updateDownload()
+    }
+
+    /// 更新下载状态和显示的文件
+    func updateDownload(){
+        self.downloads = MusicDownloadUtil.downloads(self.music.id)
+        self.downloadedText = MusicDownloadUtil.downloadedText(self.music.id)
+        let display = MusicFileResolver.displayFile(self.music)
+        self.displayFile = display.file
+        self.isDisplayDownloaded = display.isDownloaded
     }
 
     /// 下载选择的音质
     func onDownloadClick(_ quality: DownloadQuality){
         MusicDownloadUtil.download(self.music, quality: quality)
         self.downloadedText = self.downloadedText ?? "下载中"
+
+        //添加下载任务之后刷新,可以删除正在下载的
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
+            self.updateDownload()
+        }
+    }
+
+    /// 删除下载的文件,正在播放的歌曲会继续播放完,下次播放时按新的规则选择文件
+    /// - Parameter infos: 要删除的下载
+    func onDeleteDownloadClick(_ infos: [CacheInfo]){
+        MusicDownloadUtil.delete(infos.map{ $0.id })
+        Toast.show("已删除下载")
+        self.updateDownload()
+    }
+
+    /// 删除下载时显示的名称:音质、大小,没有下载完成的加上"下载中"
+    func downloadLabel(_ info: CacheInfo) -> String {
+        let file = FileSdkUtil.musicFileId(info.key).flatMap{ self.music.file(id: $0) }
+        let size = (info.size.map{ Int64($0) } ?? file?.size)?.fileSize ?? ""
+        let state = info.state == .finish ? "" : "(下载中)"
+        return MusicModel.qualityText(file?.bitRate) + "  " + size + state
     }
 
     /// 更新"我喜欢"状态

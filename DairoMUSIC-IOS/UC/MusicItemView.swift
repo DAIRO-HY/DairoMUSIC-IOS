@@ -42,7 +42,7 @@ struct MusicItemView: View {
                             .padding(.horizontal, 3)
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.secondary, lineWidth: 0.5))
                     }
-                    if self.music.maxBitRate >= SettingShared.BIT_RATE_LOSSLESS{
+                    if (self.music.maxBitRate ?? 0) >= SettingShared.BIT_RATE_LOSSLESS{
                         Text("SQ").font(.caption2).foregroundColor(.theme)
                             .padding(.horizontal, 3)
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.theme, lineWidth: 0.5))

@@ -40,10 +40,9 @@ class MineViewModel: ObservableObject {
         }
     }
 
-    /// 修改目标音质之后,重新获取歌单里的歌曲,播放时使用新的音质
+    /// 修改播放音质,歌曲里有所有音质的文件,每首歌开始播放前按设置选择,不用重新获取歌单
     func onBitRateChange(_ bitRate: Int) -> Bool{
         SettingShared.bitRate = bitRate
-        MusicShared.loadInBackground()
         return true
     }
 

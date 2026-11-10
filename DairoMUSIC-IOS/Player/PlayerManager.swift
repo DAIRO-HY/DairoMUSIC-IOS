@@ -13,7 +13,9 @@ import DairoUI_IOS
 
 /**
  播放器管理,整个App共用一个播放器
- 歌曲通过SDK的本机地址播放,边下边播,播放过的歌曲会缓存下来
+ 每首歌开始播放前按MusicFileResolver的规则选择文件:已经下载的、设置的音质已经缓存的直接播放本地文件,其他的在线播放(边播边缓存)
+ 离线模式:在线播放开始之前超时(5秒)或者失败、系统没有网络时进入离线模式,之后只播放本地有文件的歌曲,不用每首歌都等超时
+ 离线标记只保存在内存里;切换播放歌单、网络类型变化(WiFi、数据流量、没有网络之间切换)、用户在播放页取消时退出离线模式
  */
 final class PlayerManager: ObservableObject {
 
@@ -42,6 +44,21 @@ final class PlayerManager: ObservableObject {
 
     /// 采集平台的歌曲还没有采集完成时,采集服务返回的进度说明,不需要等待采集时为nil
     @Published private(set) var collectMsg: String?
+
+    /// 是否处于离线模式
+    @Published private(set) var isOffline = false
+
+    /// 进入离线模式时的网络类型,网络类型变化之后退出离线模式
+    private var offlineNetwork: NetworkType?
+
+    /// 在线播放开始之前的超时检查,开始播放或者切换歌曲时取消
+    private var startTimeoutTask: Task<Void, Never>?
+
+    /// 当前歌曲是否已经准备好开始播放,开始播放之后的失败不算断网
+    private var isStarted = false
+
+    /// 在线播放开始之前的超时时间(秒),超时之后进入离线模式
+    private static let START_TIMEOUT_SECONDS: UInt64 = 5
 
     /// 当前播放的歌曲
     var music: MusicModel? {
@@ -117,6 +134,11 @@ final class PlayerManager: ObservableObject {
         guard list.indices.contains(index) else{
             return
         }
+
+        //切换了播放歌单时退出离线模式,在同一个歌单里点另一首歌不算
+        if favoriteId != self.favoriteId || list.map({ $0.listId }) != self.playList.map({ $0.listId }){
+            self.exitOffline()
+        }
         self.playList = list
         self.index = index
         self.favoriteId = favoriteId
@@ -185,7 +207,13 @@ final class PlayerManager: ObservableObject {
             return
         }
         self.index = (self.index - 1 + self.playList.count) % self.playList.count
-        self.load(startTime: 0)
+        self.load(startTime: 0, direction: -1)
+    }
+
+    /// 退出离线模式,下一首开始尝试在线播放,正在播放的歌曲不中断
+    func exitOffline() {
+        self.isOffline = false
+        self.offlineNetwork = nil
     }
 
     /// 下一曲的序号
@@ -303,7 +331,8 @@ final class PlayerManager: ObservableObject {
 
     /// 加载当前歌曲并播放
     /// - Parameter startTime: 开始播放的位置(秒)
-    private func load(startTime: Double) {
+    /// - Parameter direction: 离线时当前歌曲不能播放,往哪个方向找能播放的歌曲,1:往后 -1:往前
+    private func load(startTime: Double, direction: Int = 1) {
         self.releasePlayer()
         guard let music = self.music else{
             return
@@ -313,43 +342,122 @@ final class PlayerManager: ObservableObject {
         self.updateArtwork(music)
         self.updateNowPlaying()
 
-        //已经下载的歌曲直接播放本地文件,不管下载的是哪种音质,没有网络时也能播放
-        if music.id != 0, let path = FileSdkUtil.downloadedMusicPath(music.id){
-            self.startPlay(music, url: URL(fileURLWithPath: path), startTime: startTime)
+        //本地有合适的文件(已经下载的、设置的音质已经缓存的)直接播放,不需要联网,不检查网络
+        if let local = MusicFileResolver.local(music, anyQuality: false){
+            self.startPlay(music, url: local.url, startTime: startTime, isOnline: false)
             return
         }
-        guard let source = FileSource.music(music) else{
-            self.loadDetail(music, startTime: startTime)
+        self.checkOffline()
+        if self.isOffline{
+            self.loadOffline(music, startTime: startTime, direction: direction)
             return
         }
+        if music.id == 0{
+            self.loadCollect(music, startTime: startTime)
+            return
+        }
+        guard let file = music.settingFile, let source = FileSource.music(music, file: file) else{
 
-        //采集平台的歌曲还没有缓存时,要等采集服务采集完成之后才能播放
-        if music.file == nil, FileSdkUtil.cachedPath(source) == nil, let collectUrl = music.collect?.url{
-            self.waitCollect(collectUrl, source: source, startTime: startTime)
+            //歌曲列表里的信息可能是采集完成之前的,重新获取歌曲详情
+            self.loadDetail(music, startTime: startTime)
             return
         }
         self.startPlay(music, source: source, startTime: startTime)
     }
 
-    /// 开始播放
-    private func startPlay(_ music: MusicModel, source: FileSource, startTime: Double) {
+    /// 切换歌曲前检查离线模式:网络类型变化之后退出离线模式,系统没有网络时进入离线模式
+    private func checkOffline() {
+        let network = NetworkMonitor.shared.current
+        if self.isOffline, let offlineNetwork = self.offlineNetwork, network != offlineNetwork, network != .unknown{
+            self.exitOffline()
+        }
+        if !self.isOffline && network == .none{
+            self.enterOffline(msg: "当前没有网络,已切换到离线模式")
+        }
+    }
 
-        //已经缓存好的直接播放本地文件,不经过SDK的本机HTTP服务;没有扩展名的缓存文件播放器识别不了格式,只能交给SDK
-        //没有缓存时按设置边播边缓存,或者直接在线播放
-        let cachedUrl = source.ext.isEmpty ? nil : FileSdkUtil.cachedPath(source).map{ URL(fileURLWithPath: $0) }
-        guard let url = cachedUrl ?? (SettingShared.musicCache ? FileSdkUtil.open(source) : URL(string: source.url)) else{
+    /// 进入离线模式,记下当时的网络类型
+    private func enterOffline(msg: String) {
+        if self.isOffline{
+            return
+        }
+        self.isOffline = true
+        self.offlineNetwork = NetworkMonitor.shared.current
+        Toast.show(msg)
+    }
+
+    /// 离线时播放已经缓存的其他音质,没有缓存的按播放顺序找下一首本地有文件的歌曲
+    private func loadOffline(_ music: MusicModel, startTime: Double, direction: Int) {
+        if let local = MusicFileResolver.local(music, anyQuality: true){
+            self.startPlay(music, url: local.url, startTime: startTime, isOnline: false)
+            return
+        }
+        guard let index = self.offlinePlayableIndex(direction: direction) else{
+            self.stopOffline()
+            return
+        }
+        self.index = index
+        self.load(startTime: 0, direction: direction)
+    }
+
+    /// 离线时按播放顺序找一首本地有文件的歌曲,当前这首不能播放,最多找一遍列表,找不到时返回nil
+    /// 单曲循环:不切换到其他歌曲;列表循环:按方向依次往后(往前)找;随机播放:从本地有文件的歌曲里随机选
+    private func offlinePlayableIndex(direction: Int) -> Int? {
+        if self.orderType == .ONE_LOOP{
+            return nil
+        }
+        let keys = FileSdkUtil.localMusicKeys()
+        let isPlayable = { (music: MusicModel) -> Bool in
+            if music.id != 0{
+                return keys.musicIds.contains(music.id)
+            }
+            return FileSource.collectMusic(music).map{ keys.collectKeys.contains($0.options.cacheKey ?? "") } ?? false
+        }
+        let count = self.playList.count
+        if self.orderType == .RANDOM_LOOP{
+            return self.playList.indices.filter{ $0 != self.index && isPlayable(self.playList[$0]) }.randomElement()
+        }
+        for step in 1 ..< max(count, 1){
+            let index = ((self.index + direction * step) % count + count) % count
+            if isPlayable(self.playList[index]){
+                return index
+            }
+        }
+        return nil
+    }
+
+    /// 离线时整个列表都没有可以播放的歌曲,停止播放,停在当前歌曲
+    private func stopOffline() {
+        self.releasePlayer()
+        self.savePlayingInfo()
+        Toast.show("离线模式下没有可以播放的歌曲")
+    }
+
+    /// 采集平台的歌曲,还没有缓存时要等采集服务采集完成之后才能播放
+    private func loadCollect(_ music: MusicModel, startTime: Double) {
+        guard let source = FileSource.collectMusic(music), let collectUrl = music.collect?.url else{
+            self.onError("歌曲没有播放地址")
+            return
+        }
+        self.waitCollect(collectUrl, source: source, startTime: startTime)
+    }
+
+    /// 在线播放:按设置边播边缓存,或者直接在线播放
+    private func startPlay(_ music: MusicModel, source: FileSource, startTime: Double) {
+        guard let url = SettingShared.musicCache ? FileSdkUtil.open(source) : URL(string: source.url) else{
             self.onError("歌曲加载失败")
             return
         }
-        self.startPlay(music, url: url, startTime: startTime)
+        self.startPlay(music, url: url, startTime: startTime, isOnline: true)
     }
 
     /// 开始播放指定地址的歌曲
-    private func startPlay(_ music: MusicModel, url: URL, startTime: Double) {
+    /// - Parameter isOnline: 是否在线播放,在线播放开始之前超时或者失败时进入离线模式
+    private func startPlay(_ music: MusicModel, url: URL, startTime: Double, isOnline: Bool) {
         let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
         self.player = player
-        self.observe(player, item)
+        self.observe(player, item, isOnline: isOnline, startTime: startTime)
         self.setupRemoteCommands()
         if startTime > 0{
             player.seek(to: CMTime(seconds: startTime, preferredTimescale: 600))
@@ -358,6 +466,23 @@ final class PlayerManager: ObservableObject {
         player.play()
         MusicShared.addLate(music)
         self.savePlayingInfo()
+        if isOnline{
+            self.startTimeoutTask = Task{ @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: PlayerManager.START_TIMEOUT_SECONDS * 1_000_000_000)
+                guard let self, !Task.isCancelled, self.player === player, item.status != .readyToPlay else{
+                    return
+                }
+                self.onStartFailed(startTime: startTime)
+            }
+        }
+    }
+
+    /// 在线播放开始之前超时或者失败,进入离线模式,当前歌曲按离线规则重新加载
+    /// 播放途中的失败不算断网
+    private func onStartFailed(startTime: Double) {
+        self.releasePlayer()
+        self.enterOffline(msg: "网络连接超时,已切换到离线模式")
+        self.load(startTime: startTime)
     }
 
     /// 等待采集服务采集完成,每秒查询一次进度,第一次查询时采集服务开始采集
@@ -394,25 +519,21 @@ final class PlayerManager: ObservableObject {
         }
     }
 
-    /// 歌曲列表里的信息可能是采集完成之前的,重新获取歌曲详情之后再播放
+    /// 歌曲列表里的信息可能是采集完成之前的,重新获取歌曲详情之后再播放;网络连接失败时进入离线模式
     private func loadDetail(_ music: MusicModel, startTime: Double) {
-        guard music.id != 0 else{
-            self.onError("歌曲没有播放地址")
-            return
-        }
         self.isLoading = true
         self.detailRequest = MusicApi.detail(id: music.id).hide().fail{ [weak self] in
             self?.isLoading = false
             self?.onError($0.msg ?? "获取歌曲信息失败")
-        }.error{ [weak self] in
+        }.error{ [weak self] _ in
             self?.isLoading = false
-            self?.onError($0)
+            self?.onStartFailed(startTime: startTime)
         }.send{ [weak self] detail in
             guard let self, self.music?.id == detail.id else{
                 return
             }
             self.isLoading = false
-            if FileSource.music(detail) == nil{
+            if !detail.hasFile{
                 self.onError("歌曲还在处理中,请稍后再试")
                 return
             }
@@ -424,7 +545,8 @@ final class PlayerManager: ObservableObject {
     }
 
     /// 监听播放状态
-    private func observe(_ player: AVPlayer, _ item: AVPlayerItem) {
+    /// - Parameter isOnline: 在线播放开始之前失败时进入离线模式
+    private func observe(_ player: AVPlayer, _ item: AVPlayerItem, isOnline: Bool, startTime: Double) {
         self.timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: 600), queue: .main){ [weak self] time in
             guard let self, !self.progress.isDragging, time.isNumeric else{
                 return
@@ -440,9 +562,15 @@ final class PlayerManager: ObservableObject {
         }.store(in: &self.cancellables)
         item.publisher(for: \.status).receive(on: DispatchQueue.main).sink{ [weak self] status in
             if status == .readyToPlay{
+                self?.isStarted = true
                 self?.errorCount = 0
+                self?.startTimeoutTask?.cancel()
             } else if status == .failed{
-                self?.onError("歌曲加载失败")
+                if isOnline && self?.isStarted == false{
+                    self?.onStartFailed(startTime: startTime)
+                } else {
+                    self?.onError("歌曲加载失败")
+                }
             }
         }.store(in: &self.cancellables)
         item.publisher(for: \.duration).receive(on: DispatchQueue.main).sink{ [weak self] duration in
@@ -488,6 +616,9 @@ final class PlayerManager: ObservableObject {
 
     /// 释放当前歌曲的播放器
     private func releasePlayer() {
+        self.isStarted = false
+        self.startTimeoutTask?.cancel()
+        self.startTimeoutTask = nil
         self.detailRequest?.cancel()
         self.detailRequest = nil
         self.collectTask?.cancel()

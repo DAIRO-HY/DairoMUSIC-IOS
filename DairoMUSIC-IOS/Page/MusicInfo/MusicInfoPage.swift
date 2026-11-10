@@ -22,6 +22,12 @@ struct MusicInfoPage: View {
     /// 显示下载音质的选择
     @State private var showDownloadPicker = false
 
+    /// 显示删除下载的确认(只下载了一种音质时)
+    @State private var showDeleteDownloadAlert = false
+
+    /// 显示删除哪种音质的选择(下载了多种音质时)
+    @State private var showDeleteDownloadPicker = false
+
     /// 服务器配置,不允许下载歌曲时不显示下载按钮
     @ObservedObject private var config = ServerConfig.shared
 
@@ -70,13 +76,25 @@ struct MusicInfoPage: View {
                         }
                         .icon("arrow.down.circle.fill", backgroundColor: .green)
                     }
+
+                    //已经下载的可以删除,不允许下载时也可以删除
+                    if !self.vm.downloads.isEmpty{
+                        SettingButton("删除下载"){
+                            if self.vm.downloads.count == 1{
+                                self.showDeleteDownloadAlert = true
+                            } else {
+                                self.showDeleteDownloadPicker = true
+                            }
+                        }
+                        .icon("trash.circle.fill", backgroundColor: .red)
+                    }
                 }
                 SettingGroup{
                     SettingText(title: "歌手：" + music.artistText)
                     SettingText(title: "专辑：" + (music.album ?? "未知专辑"))
                     SettingText(title: "最高音质：" + MusicModel.qualityText(music.maxBitRate))
-                    SettingText(title: "当前音质：" + MusicModel.qualityText(music.file?.bitRate))
-                    SettingText(title: "文件大小：" + (music.file.map{ $0.size.fileSize } ?? "未知"))
+                    SettingText(title: "当前音质：" + MusicModel.qualityText(self.vm.displayFile?.bitRate) + (self.vm.isDisplayDownloaded ? "(已下载)" : ""))
+                    SettingText(title: "文件大小：" + (self.vm.displayFile.map{ $0.size.fileSize } ?? "未知"))
                     SettingText(title: "时长：" + (music.duration.map{ $0.timeFormat } ?? "未知"))
                 }
                 if music.id != 0{
@@ -102,10 +120,29 @@ struct MusicInfoPage: View {
             Button("取消", role: .cancel){}
         }
         .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
-            ForEach(MusicDownloadUtil.qualities(maxBitRate: music.maxBitRate), id: \.self){ quality in
+            ForEach(MusicDownloadUtil.qualities(music), id: \.self){ quality in
                 Button(quality.label){
                     self.vm.onDownloadClick(quality)
                 }
+            }
+            Button("取消", role: .cancel){}
+        }
+        .alert("确定删除下载的歌曲吗？", isPresented: self.$showDeleteDownloadAlert){
+            Button("删除", role: .destructive){
+                self.vm.onDeleteDownloadClick(self.vm.downloads)
+            }
+            Button("取消", role: .cancel){}
+        } message: {
+            Text(self.vm.downloads.first.map{ self.vm.downloadLabel($0) } ?? "")
+        }
+        .confirmationDialog("删除下载", isPresented: self.$showDeleteDownloadPicker, titleVisibility: .visible){
+            ForEach(self.vm.downloads, id: \.id){ info in
+                Button(self.vm.downloadLabel(info), role: .destructive){
+                    self.vm.onDeleteDownloadClick([info])
+                }
+            }
+            Button("全部删除", role: .destructive){
+                self.vm.onDeleteDownloadClick(self.vm.downloads)
             }
             Button("取消", role: .cancel){}
         }

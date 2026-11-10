@@ -91,7 +91,7 @@ struct MusicListPage: View {
         .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
             ForEach(MusicDownloadUtil.QUALITIES, id: \.self){ quality in
                 Button(quality.label){
-                    MusicDownloadUtil.downloadAll(self.vm.musicList, favoriteId: self.vm.favoriteId, quality: quality)
+                    MusicDownloadUtil.downloadAll(self.vm.musicList, quality: quality)
                 }
             }
             Button("取消", role: .cancel){}

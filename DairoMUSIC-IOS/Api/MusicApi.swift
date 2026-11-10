@@ -11,8 +11,8 @@ enum MusicApi {
   }
 
   //歌曲详情
-  static func detail(id: Int64,bitRate: Int = SettingShared.bitRate) -> ApiHttp<MusicModel>{
-    return ApiHttp<MusicModel>(ApiConst.MUSIC_DETAIL,method: "GET",parameter: ["id":id,"bitRate":bitRate])
+  static func detail(id: Int64) -> ApiHttp<MusicModel>{
+    return ApiHttp<MusicModel>(ApiConst.MUSIC_DETAIL,method: "GET",parameter: ["id":id])
   }
 
   //歌词列表

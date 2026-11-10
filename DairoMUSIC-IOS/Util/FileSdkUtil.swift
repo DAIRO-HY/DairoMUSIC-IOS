@@ -269,13 +269,45 @@ enum FileSdkUtil {
     }
 
     /**
-     已经下载完成的歌曲文件路径,不管是哪种音质,有多个时使用音质最高的(文件最大的)
+     歌曲在本地已经完成的文件,包括永久下载和边播边缓存的
+     - Parameter onlyDownloaded: 是否只要永久下载的
      */
-    static func downloadedMusicPath(_ musicId: Int64) -> String? {
+    static func finishedMusics(_ musicId: Int64, onlyDownloaded: Bool) -> [CacheInfo] {
         let prefix = FileSdkUtil.musicKeyPrefix(musicId)
-        return FileSdkUtil.downloads(group: FileSdkUtil.GROUP_MUSIC)
+        return FileSdkUtil.list(group: FileSdkUtil.GROUP_MUSIC, mode: onlyDownloaded ? .save : nil)
             .filter{ $0.key.hasPrefix(prefix) && $0.state == .finish && $0.path != nil }
-            .max{ ($0.size ?? 0) < ($1.size ?? 0) }?.path
+    }
+
+    /**
+     从歌曲缓存key里取出文件ID,不是曲库歌曲的key时返回nil
+     */
+    static func musicFileId(_ key: String) -> Int64? {
+        guard let range = key.range(of: "/file/") else{
+            return nil
+        }
+        return Int64(key[range.upperBound...])
+    }
+
+    /**
+     本地有已经完成的文件(下载或者缓存)的歌曲,离线时用来查找可以播放的歌曲,一次查出来,不用每首歌查一次
+     - Returns: 曲库歌曲的ID和采集平台歌曲的缓存key
+     */
+    static func localMusicKeys() -> (musicIds: Set<Int64>, collectKeys: Set<String>) {
+        var musicIds = Set<Int64>()
+        var collectKeys = Set<String>()
+        for info in FileSdkUtil.list(group: FileSdkUtil.GROUP_MUSIC, mode: nil) where info.state == .finish && info.path != nil{
+            if info.key.hasPrefix("/collect/"){
+                collectKeys.insert(info.key)
+                continue
+            }
+
+            //key的格式:/music/{歌曲ID}/file/{文件ID}
+            let parts = info.key.split(separator: "/")
+            if parts.count >= 2, parts[0] == "music", let musicId = Int64(parts[1]){
+                musicIds.insert(musicId)
+            }
+        }
+        return (musicIds, collectKeys)
     }
 
     /**
@@ -357,28 +389,31 @@ struct FileSource {
     /// 缓存文件的扩展名,未知时为空,此时缓存文件没有扩展名,播放器不能直接播放
     let ext: String
 
-    /// 歌曲文件,没有采集完成时使用采集平台的播放地址,都没有时返回nil
-    static func music(_ music: MusicModel) -> FileSource? {
+    /// 曲库里歌曲的一个音质的文件
+    /// 用歌曲ID和文件ID作为缓存key,DFS换了地址或者重新生成公开路径之后缓存依然有效,可以按歌曲ID找到已经下载、缓存的文件;有MD5时下载完成后校验
+    /// 文件名带上歌手和音质,下载列表里显示
+    static func music(_ music: MusicModel, file: MusicFileModel) -> FileSource? {
+        guard let url = file.url, !url.isEmpty else{
+            return nil
+        }
+        let displayName = "\(music.nameText) - \(music.artistText) [\(MusicModel.qualityText(file.bitRate))].\(file.format)"
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
+                                                     cacheKey: FileSdkUtil.musicKeyPrefix(music.id) + "\(file.id)", name: displayName,
+                                                     md5: file.md5, thumb: music.logo),
+                          ext: file.format)
+    }
+
+    /// 还没有入库的采集平台歌曲
+    /// 采集平台的播放地址可能每次都不一样,用采集参数作为缓存key;扩展名从地址里获取,获取不到时为空
+    static func collectMusic(_ music: MusicModel) -> FileSource? {
+        guard let collect = music.collect, let url = collect.url, !url.isEmpty else{
+            return nil
+        }
         let name = music.name ?? "\(music.id)"
-        if let file = music.file, let url = file.url, !url.isEmpty{
-
-            //用歌曲ID和文件ID作为缓存key,DFS换了地址或者重新生成公开路径之后缓存依然有效,播放时可以按歌曲ID找到已经下载的文件;有MD5时下载完成后校验
-            //文件名带上歌手和音质,下载列表里显示
-            let displayName = "\(music.nameText) - \(music.artistText) [\(MusicModel.qualityText(file.bitRate))].\(file.format)"
-            return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
-                                                         cacheKey: FileSdkUtil.musicKeyPrefix(music.id) + "\(file.id)", name: displayName,
-                                                         md5: file.md5, thumb: music.logo),
-                              ext: file.format)
-        }
-        if let collect = music.collect, let url = collect.url, !url.isEmpty{
-
-            //采集平台的播放地址可能每次都不一样,用采集参数作为缓存key;扩展名从地址里获取,获取不到时为空
-            let ext = URL(string: url)?.pathExtension.lowercased() ?? ""
-            return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
-                                                         cacheKey: "/collect/\(collect.platform)/\(collect.extra)",
-                                                         name: ext.isEmpty ? name : "\(name).\(ext)"), ext: ext)
-        }
-        return nil
+        let ext = URL(string: url)?.pathExtension.lowercased() ?? ""
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
+                                                     cacheKey: "/collect/\(collect.platform)/\(collect.extra)",
+                                                     name: ext.isEmpty ? name : "\(name).\(ext)"), ext: ext)
     }
 
     /// 歌曲视频,用歌曲ID和文件ID作为缓存key,换了地址之后缓存和下载依然有效,没有网络时可以按歌曲ID找到缓存好的视频

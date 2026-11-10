@@ -31,8 +31,10 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         let download = self.app.button(startsWith: "下载")
         XCTAssertTrue(download.waitForExistence(timeout: 5))
         download.tap()
-        let quality = self.app.buttons["超高品质(320K)"]
+        //选项是这首歌所有音质的文件和大小,例如:超高品质(320K)  1.5MB
+        let quality = self.app.button(startsWith: "超高品质(320K)")
         XCTAssertTrue(quality.waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.button(startsWith: "标准(128K)").exists)
         self.shot("选择音质")
         quality.tap()
         self.waitToast("已加入下载列表")
@@ -122,6 +124,72 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         self.back()
         self.back()
         self.logout()
+    }
+
+    /// 歌曲信息页:下载之后当前音质显示下载的文件,删除下载(多种音质时选择删除哪一种)之后按设置的播放音质显示
+    @MainActor
+    func testDeleteDownload() throws {
+        let config = self.getJson("/api/common/config")
+        try XCTSkipIf(config?["allowDownloadMusic"] as? Bool != true, "服务器不允许下载歌曲,跳过")
+        self.loginTemp()
+        self.app.buttons["搜索歌曲、歌手"].tap()
+        let searchField = self.app.textFields["搜索歌曲、歌手"]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.typeText("测试歌手A\n")
+        XCTAssertTrue(self.app.staticTexts["晴空之歌"].waitForExistence(timeout: 10))
+
+        //下载标准和超高品质两种音质
+        for quality in ["标准(128K)", "超高品质(320K)"]{
+            self.openInfo("晴空之歌")
+            self.app.button(startsWith: "下载").tap()
+            let button = self.app.button(startsWith: quality)
+            XCTAssertTrue(button.waitForExistence(timeout: 5))
+            button.tap()
+            self.waitToast("已加入下载列表")
+            self.dismissSheet()
+            Thread.sleep(forTimeInterval: 3)
+        }
+
+        //下载了多种音质,当前音质显示音质最好的
+        self.openInfo("晴空之歌")
+        XCTAssertTrue(self.currentQuality().contains("超高品质(320K)(已下载)"), self.currentQuality())
+        self.shot("下载之后的歌曲信息")
+
+        //选择删除超高品质
+        self.app.button(startsWith: "删除下载").tap()
+        let delete320 = self.app.button(startsWith: "超高品质(320K)")
+        XCTAssertTrue(delete320.waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.buttons["全部删除"].exists)
+        self.shot("选择删除哪种音质")
+        delete320.tap()
+        self.waitToast("已删除下载")
+        XCTAssertTrue(self.currentQuality().contains("标准(128K)(已下载)"), self.currentQuality())
+
+        //只剩一种音质,确认之后删除,之后按设置的播放音质(超高品质)显示
+        self.app.button(startsWith: "删除下载").tap()
+        let alert = self.app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["删除"].tap()
+        self.waitToast("已删除下载")
+        XCTAssertFalse(self.app.button(startsWith: "删除下载").exists)
+        XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)")
+        self.shot("删除下载之后")
+        self.dismissSheet()
+        self.back()
+        self.app.buttons["我的"].tap()
+        self.logout()
+    }
+
+    /// 打开搜索结果里的歌曲信息
+    private func openInfo(_ name: String) {
+        self.app.cells.containing(.staticText, identifier: name).firstMatch.buttons["更多操作"].tap()
+        XCTAssertTrue(self.app.button(startsWith: "下载").waitForExistence(timeout: 5))
+    }
+
+    /// 歌曲信息页的当前音质
+    private func currentQuality() -> String {
+        let text = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "当前音质：")).firstMatch
+        return text.waitForExistence(timeout: 5) ? text.label : ""
     }
 
     /// 服务器不允许下载歌曲时不显示下载按钮,服务器允许下载时跳过

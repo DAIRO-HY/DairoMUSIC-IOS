@@ -38,13 +38,13 @@ enum FavoriteApi {
   }
 
   //歌单里的歌曲,最近添加的在前面
-  static func musics(id: Int64,bitRate: Int = SettingShared.bitRate) -> ApiHttp<[MusicModel]>{
-    return ApiHttp<[MusicModel]>(ApiConst.FAVORITE_MUSICS,method: "GET",parameter: ["id":id,"bitRate":bitRate])
+  static func musics(id: Int64) -> ApiHttp<[MusicModel]>{
+    return ApiHttp<[MusicModel]>(ApiConst.FAVORITE_MUSICS,method: "GET",parameter: ["id":id])
   }
 
   //我所有歌单里的歌曲
   static func allMusics() -> ApiHttp<[MusicModel]>{
-    return ApiHttp<[MusicModel]>(ApiConst.FAVORITE_ALL_MUSICS,method: "GET",parameter: ["bitRate":SettingShared.bitRate])
+    return ApiHttp<[MusicModel]>(ApiConst.FAVORITE_ALL_MUSICS,method: "GET")
   }
 
   //添加歌曲到歌单
