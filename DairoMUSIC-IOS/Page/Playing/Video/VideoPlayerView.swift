@@ -192,6 +192,12 @@ struct VideoPlayerView: View {
     /// 全屏、退出全屏按钮点击事件
     let onFullScreenClick: () -> Void
 
+    /// 上一个视频按钮点击事件
+    let onPreviousClick: () -> Void
+
+    /// 下一个视频按钮点击事件
+    let onNextClick: () -> Void
+
     /// 是否显示控制按钮
     @State private var showControls = true
 
@@ -231,18 +237,37 @@ struct VideoPlayerView: View {
     private var controls: some View {
         ZStack{
             Color.black.opacity(0.3)
-            if self.state.isBuffering{
-                ProgressView().tint(.white).scaleEffect(1.5)
-            } else {
-                Button(action: {
-                    self.state.playOrPause()
-                }){
-                    Image(systemName: self.state.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 30))
-                        .frame(width: 64, height: 64)
-                        .background(Circle().fill(Color.black.opacity(0.4)))
+
+            //上一个、播放暂停(缓冲时显示加载中)、下一个
+            HStack(spacing: self.isFullScreen ? 56 : 36){
+                Button(action: self.onPreviousClick){
+                    Image(systemName: "backward.end.fill")
+                        .font(.system(size: 22))
+                        .frame(width: 48, height: 48)
                 }
-                .accessibilityLabel(self.state.isPlaying ? "暂停视频" : "播放视频")
+                .accessibilityLabel("上一个视频")
+                ZStack{
+                    if self.state.isBuffering{
+                        ProgressView().tint(.white).scaleEffect(1.5)
+                    } else {
+                        Button(action: {
+                            self.state.playOrPause()
+                        }){
+                            Image(systemName: self.state.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 30))
+                                .frame(width: 64, height: 64)
+                                .background(Circle().fill(Color.black.opacity(0.4)))
+                        }
+                        .accessibilityLabel(self.state.isPlaying ? "暂停视频" : "播放视频")
+                    }
+                }
+                .frame(width: 64, height: 64)
+                Button(action: self.onNextClick){
+                    Image(systemName: "forward.end.fill")
+                        .font(.system(size: 22))
+                        .frame(width: 48, height: 48)
+                }
+                .accessibilityLabel("下一个视频")
             }
             VStack{
 

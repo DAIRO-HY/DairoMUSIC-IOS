@@ -180,6 +180,16 @@ class VideoViewModel: ObservableObject {
         }
     }
 
+    /// 切换到上一个有视频的歌曲
+    func onPreviousClick() {
+        guard let index = PlayerManager.shared.previousVideoIndex else{
+            Toast.show("播放列表里没有其他有视频的歌曲")
+            return
+        }
+        PlayerManager.shared.selectWithoutPlaying(index)
+        self.enter()
+    }
+
     /// 播放播放列表里下一个有视频的歌曲,没有时返回false
     @discardableResult
     private func playNext() -> Bool {

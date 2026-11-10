@@ -19,7 +19,8 @@ struct VideoView: View {
                 Color.black
                 if let player = self.vm.player{
                     if !self.vm.isFullScreen{
-                        VideoPlayerView(player: player, state: self.vm.state, isFullScreen: false, onFullScreenClick: self.vm.enterFullScreen)
+                        VideoPlayerView(player: player, state: self.vm.state, isFullScreen: false, onFullScreenClick: self.vm.enterFullScreen,
+                                        onPreviousClick: self.vm.onPreviousClick, onNextClick: self.vm.onNextClick)
                     }
                 } else {
                     VStack(spacing: 12){
@@ -32,6 +33,20 @@ struct VideoView: View {
                                 self.vm.showOriginalConfirm = true
                             }
                             .buttonStyle(.bordered)
+                        }
+
+                        //没有视频、等待转码时也可以切换到上一个、下一个视频
+                        if !self.vm.isWaiting{
+                            HStack(spacing: 36){
+                                Button(action: self.vm.onPreviousClick){
+                                    Image(systemName: "backward.end.fill").font(.title3).frame(width: 44, height: 44)
+                                }
+                                .accessibilityLabel("上一个视频")
+                                Button(action: self.vm.onNextClick){
+                                    Image(systemName: "forward.end.fill").font(.title3).frame(width: 44, height: 44)
+                                }
+                                .accessibilityLabel("下一个视频")
+                            }
                         }
                     }
                     .padding()
@@ -59,9 +74,9 @@ struct VideoView: View {
         }
     }
 
-    /// 清晰度、下一个视频、下载,三个按钮平分宽度,不允许下载视频时不显示下载按钮,下一个视频仍然在中间
+    /// 清晰度、下载,不允许下载视频时不显示下载按钮
     private var toolbar: some View {
-        HStack(spacing: 0){
+        HStack{
             Menu{
                 Picker("清晰度", selection: Binding(get: { self.vm.quality }, set: { self.vm.onQualityChange($0) })){
                     Text("流畅").tag(SettingShared.VIDEO_QUALITY_SMOOTH)
@@ -72,25 +87,17 @@ struct VideoView: View {
             }
             .disabled(self.vm.isOriginalOnly)
             .accessibilityLabel("清晰度")
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Button(action: self.vm.onNextClick){
-                Image(systemName: "forward.end.fill")
-            }
-            .accessibilityLabel("下一个视频")
-            .frame(maxWidth: .infinity)
-            Group{
-                if self.vm.allowDownload{
-                    Button(action: self.vm.onDownloadClick){
-                        if let percent = self.vm.downloadPercent{
-                            Label("\(percent)%", systemImage: "arrow.down.circle")
-                        } else {
-                            Label(self.vm.isDownloaded ? "已下载" : "下载", systemImage: self.vm.isDownloaded ? "checkmark.circle" : "arrow.down.circle")
-                        }
+            Spacer()
+            if self.vm.allowDownload{
+                Button(action: self.vm.onDownloadClick){
+                    if let percent = self.vm.downloadPercent{
+                        Label("\(percent)%", systemImage: "arrow.down.circle")
+                    } else {
+                        Label(self.vm.isDownloaded ? "已下载" : "下载", systemImage: self.vm.isDownloaded ? "checkmark.circle" : "arrow.down.circle")
                     }
-                    .disabled(!self.vm.canDownload)
                 }
+                .disabled(!self.vm.canDownload)
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .font(.subheadline)
         .labelStyle(.titleAndIcon)

@@ -247,6 +247,18 @@ final class PlayerManager: ObservableObject {
         return indices.first{ $0 > self.index } ?? indices.first
     }
 
+    /// 上一首有视频的歌曲序号,随机播放时随机选一首,其他按列表顺序往前找,没有其他有视频的歌曲时返回nil
+    var previousVideoIndex: Int? {
+        let indices = self.playList.indices.filter{ $0 != self.index && self.playList[$0].videoState == 2 }
+        if indices.isEmpty{
+            return nil
+        }
+        if self.orderType == .RANDOM_LOOP{
+            return indices.randomElement()
+        }
+        return indices.last{ $0 < self.index } ?? indices.last
+    }
+
     /// 切换当前歌曲但不播放音乐,视频页面切换下一个视频时使用
     /// - Parameter addLate: 是否加入最近播放,定时停止时切换的歌曲还没有播放,不加入
     func selectWithoutPlaying(_ index: Int, addLate: Bool = true) {

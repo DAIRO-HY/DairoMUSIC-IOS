@@ -55,8 +55,8 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         XCTAssertTrue(self.app.buttons["已下载"].waitForExistence(timeout: 120))
         self.shot("下载完成")
 
-        //下一个视频,播放列表里的另一首稻香
-        self.app.buttons["下一个视频"].tap()
+        //下一个视频,播放列表里的另一首稻香;下一个视频按钮在视频中间,和播放按钮一起显示
+        self.tapVideoControl("下一个视频")
         self.waitVideo()
         XCTAssertTrue(self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Jay Chou")).firstMatch.waitForExistence(timeout: 10))
         Thread.sleep(forTimeInterval: 3)
@@ -96,7 +96,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         XCTAssertTrue(self.app.staticTexts["该歌曲没有视频"].waitForExistence(timeout: 10))
         self.shot("没有视频")
 
-        //下一个视频跳过没有视频的歌曲,播放4K演唱会版
+        //没有视频时提示下面也有下一个视频按钮,跳过没有视频的歌曲,播放4K演唱会版
         self.app.buttons["下一个视频"].tap()
         self.waitVideo()
         XCTAssertTrue(self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4K修复")).firstMatch.waitForExistence(timeout: 10))
@@ -144,7 +144,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         Thread.sleep(forTimeInterval: 2)
         if UIDevice.current.userInterfaceIdiom == .pad{
             XCTAssertTrue(self.isLandscape, "iPad上播放页应该可以横屏")
-            XCTAssertTrue(self.app.buttons["下一个视频"].isHittable)
+            XCTAssertTrue(self.app.buttons["清晰度"].isHittable)
             self.shot("iPad播放页横屏-视频")
             self.app.swipeLeft()
             XCTAssertTrue(self.app.buttons["播放"].waitForExistence(timeout: 5) || self.app.buttons["暂停"].exists)
@@ -195,7 +195,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         if UIDevice.current.userInterfaceIdiom != .pad{
             XCTAssertTrue(self.waitLandscape(false), "退出全屏之后应该回到竖屏")
         }
-        XCTAssertTrue(self.app.buttons["下一个视频"].waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.buttons["清晰度"].waitForExistence(timeout: 5))
         XCTAssertTrue(self.app.otherElements["视频"].exists, "退出全屏之后视频不能是黑屏")
         self.tapVideoControl(nil)
         XCTAssertTrue(self.app.buttons["暂停视频"].waitForExistence(timeout: 2) || self.app.activityIndicators.firstMatch.exists, "退出全屏之后视频应该继续播放")
@@ -320,7 +320,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         try XCTSkipIf(config?["allowDownloadVideo"] as? Bool != false, "服务器允许下载视频,跳过")
         self.loginTemp()
         self.openVideo("稻香", "稻香 周杰伦")
-        XCTAssertTrue(self.app.buttons["下一个视频"].exists)
+        XCTAssertTrue(self.app.buttons["清晰度"].exists)
         XCTAssertFalse(self.app.buttons.matching(NSPredicate(format: "label IN %@", ["下载", "已下载"])).firstMatch.exists, "不允许下载视频时不显示下载按钮")
         self.shot("不允许下载视频")
         self.closeVideoAndLogout()

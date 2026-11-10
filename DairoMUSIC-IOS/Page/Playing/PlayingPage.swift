@@ -102,7 +102,8 @@ struct PlayingPage: View {
                 ZStack{
                     Color.black.ignoresSafeArea()
                     if let player = self.videoVm.player{
-                        VideoPlayerView(player: player, state: self.videoVm.state, isFullScreen: true, onFullScreenClick: self.videoVm.exitFullScreen)
+                        VideoPlayerView(player: player, state: self.videoVm.state, isFullScreen: true, onFullScreenClick: self.videoVm.exitFullScreen,
+                                        onPreviousClick: self.videoVm.onPreviousClick, onNextClick: self.videoVm.onNextClick)
                     } else {
                         VStack(spacing: 16){
                             if self.videoVm.isWaiting{
