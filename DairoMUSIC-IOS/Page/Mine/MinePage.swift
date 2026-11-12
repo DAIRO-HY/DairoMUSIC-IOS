@@ -42,14 +42,16 @@ struct MinePage: View {
     var body: some View {
         NavigationView{
             SettingStack(embedInNavigationStack: false){
-                SettingPage(verticalPadding: 16){
-                    SettingGroup{
-                        SettingCustomView{
-                            NavigationLink(destination: LoggedPage()){
-                                self.topLogoView
-                            }
-                            .buttonStyle(.row)
+                //页面没有上下边距,账号信息紧贴状态栏下面
+                SettingPage(verticalPadding: 0){
+
+                    //账号信息占满整个顶部,包括状态栏,没有圆角和左右边距;背景往上延伸到状态栏,下拉时也不露出底色
+                    SettingCustomView{
+                        NavigationLink(destination: LoggedPage()){
+                            self.topLogoView
                         }
+                        .buttonStyle(.row)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground).padding(.top, -1000))
                     }
                     SettingGroup{
                         SettingNavigationLink("个人资料",tip: self.vm.user?.isTemp == true ? "未绑定邮箱" : "昵称、头像"){
@@ -108,6 +110,11 @@ struct MinePage: View {
                         SettingButtonSingle("退出登录"){
                             self.showLogoutAlert = true
                         }
+                    }
+
+                    //页面没有下边距,最后留出和分组之间一样的距离(分组间距20)
+                    SettingCustomView{
+                        Color.clear.frame(height: 0)
                     }
                 }
             }

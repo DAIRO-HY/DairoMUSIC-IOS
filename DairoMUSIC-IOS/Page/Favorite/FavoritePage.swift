@@ -69,6 +69,18 @@ struct FavoritePage: View {
                         }
                     }
                     .onMove(perform: self.vm.onMove)
+
+                    //没有歌单时的提示,用透明背景的行,不用section的footer(普通列表的footer有白色背景)
+                    if self.vm.userFavorites.isEmpty{
+                        Text("点击右上角的+新建歌单")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+
+                            //和"我的歌单"标题对齐,section的标题默认有16的缩进
+                            .listRowInsets(EdgeInsets(top: 4, leading: FavoritePage.ROW_PADDING.leading + 16, bottom: 4, trailing: 0))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                 } header: {
                     HStack{
                         Text("我的歌单").foregroundColor(.secondary)
@@ -95,14 +107,6 @@ struct FavoritePage: View {
 
                     //和卡片里的封面对齐
                     .padding(.horizontal, FavoritePage.ROW_PADDING.leading)
-                } footer: {
-                    if self.vm.userFavorites.isEmpty{
-                        Text("点击右上角的+新建歌单")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, FavoritePage.ROW_PADDING.leading)
-                            .listRowSeparator(.hidden)
-                    }
                 }
             }
             .listStyle(.plain)
@@ -118,7 +122,7 @@ struct FavoritePage: View {
                 HomeTabView(.FAVORITE_PAGE)
             }
             .navigationTitle("音乐")
-            .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.large)
             .alert("新建歌单", isPresented: self.$showCreateAlert){
                 TextField("请输入歌单名", text: self.$vm.createName)
                 Button("创建", action: self.vm.onCreateClick)

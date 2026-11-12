@@ -70,12 +70,14 @@ struct PlayingPage: View {
             .ignoresSafeArea()
             GeometryReader{ geo in
                 let isLandscape = geo.size.width > geo.size.height
+
+                //左右滑动的页面不加左右边距,封面的阴影不会被页面边缘切掉;页面里的视频、歌词和其他控件自己加左右边距
                 VStack(spacing: 0){
-                    self.topBar
+                    self.topBar.padding(.horizontal)
                     if isLandscape{
 
                         //横屏(iPad):左边视频/封面/歌词,右边歌曲信息和控制栏
-                        HStack(spacing: 32){
+                        HStack(spacing: 16){
                             self.tabView
                             VStack(spacing: 0){
                                 Spacer()
@@ -84,14 +86,17 @@ struct PlayingPage: View {
                                 Spacer()
                             }
                             .frame(width: min(geo.size.width * 0.4, PlayingPage.LANDSCAPE_CONTROL_MAX_WIDTH))
+                            .padding(.trailing)
                         }
                     } else {
                         self.tabView
-                        self.infoBar
-                        self.bottomBar
+                        VStack(spacing: 0){
+                            self.infoBar
+                            self.bottomBar
+                        }
+                        .padding(.horizontal)
                     }
                 }
-                .padding(.horizontal)
                 .frame(maxWidth: isLandscape ? .infinity : PlayingPage.PORTRAIT_MAX_WIDTH)
                 .frame(maxWidth: .infinity)
             }
@@ -193,9 +198,9 @@ struct PlayingPage: View {
     /// 视频、封面、歌词左右滑动切换
     private var tabView: some View {
         TabView(selection: self.$selectedTab){
-            VideoView(vm: self.videoVm).tag(PlayingPage.TAB_VIDEO)
+            VideoView(vm: self.videoVm).padding(.horizontal).tag(PlayingPage.TAB_VIDEO)
             self.coverView.tag(PlayingPage.TAB_COVER)
-            LrcView().tag(PlayingPage.TAB_LRC)
+            LrcView().padding(.horizontal).tag(PlayingPage.TAB_LRC)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
     }
@@ -251,9 +256,10 @@ struct PlayingPage: View {
     }
 
     /// 封面
+    /// 页面没有左右边距,封面左右各留36(原来的页面边距16加封面边距20),阴影可以完整显示
     private var coverView: some View {
         GeometryReader{ geo in
-            let size = min(geo.size.width - 40, geo.size.height - 40)
+            let size = min(geo.size.width - 72, geo.size.height - 40)
             MusicImage(self.player.music?.logo)
                 .frame(width: size, height: size)
                 .cornerRadius(24)
