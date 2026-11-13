@@ -31,6 +31,9 @@ class VideoViewModel: ObservableObject {
     /// 等待采集平台的原画视频最多查询的次数
     private static let COLLECT_MAX_TIMES = 180
 
+    /// 服务器没有开启视频采集,并且没有可以播放的视频时的提示
+    private static let VIDEO_DISABLED_TIP = "该歌曲没有视频或服务器未开启视频采集功能"
+
     /// 视频播放器,还没有开始播放时为nil
     @Published private(set) var player: AVPlayer?
 
@@ -250,7 +253,9 @@ class VideoViewModel: ObservableObject {
     private func loadCollect(_ music: MusicModel) {
         self.isOriginalOnly = true
         guard let source = FileSource.collectVideo(music), let infoUrl = music.collect?.videoInfoUrl.flatMap({ URL(string: $0) }) else{
-            self.tip = "该歌曲没有视频"
+
+            //服务器没有开启视频采集时没有视频地址
+            self.tip = ServerConfig.shared.videoEnable ? "该歌曲没有视频" : VideoViewModel.VIDEO_DISABLED_TIP
             return
         }
 
@@ -362,7 +367,12 @@ class VideoViewModel: ObservableObject {
     }
 
     /// 显示提示,一段时间之后重新获取视频信息
+    /// 服务器没有开启视频采集时,未采集、采集中、转码中的视频不会再有变化,直接提示,不再查询
     private func waitAndRetry(_ music: MusicModel, tip: String) {
+        if !ServerConfig.shared.videoEnable{
+            self.showTip(VideoViewModel.VIDEO_DISABLED_TIP)
+            return
+        }
         self.isWaiting = true
         self.tip = tip
         self.pollTask = Task{ @MainActor [weak self] in

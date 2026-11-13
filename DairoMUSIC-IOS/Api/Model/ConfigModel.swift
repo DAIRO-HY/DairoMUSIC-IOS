@@ -18,4 +18,7 @@ struct ConfigModel : Codable {
   	/** 是否允许下载歌曲 **/
   var allowDownloadMusic: Bool
 
+  	/** 服务器是否开启了视频采集,没有开启时不会采集、转码新的视频 **/
+  var videoEnable: Bool
+
 }
