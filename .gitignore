@@ -1,1 +1,19 @@
+# Xcode个人设置(窗口状态、断点、scheme排序等),每个人都不一样
+xcuserdata/
+*.xcuserstate
+
+# 编译输出
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# 系统和编辑器
+.DS_Store
 /.idea
+/.vscode
