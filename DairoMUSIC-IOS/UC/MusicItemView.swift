@@ -48,6 +48,15 @@ struct MusicItemView: View {
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.theme, lineWidth: 0.5))
                     }
                     Text(self.music.artistAlbumText).font(.footnote).lineLimit(1)
+
+                    //播放次数,只有曲库的搜索结果有
+                    if let playCount = self.music.playCount{
+                        Spacer(minLength: 4)
+                        Label(MusicItemView.playCountText(playCount), systemImage: "play.circle")
+                            .font(.caption2)
+                            .labelStyle(PlayCountLabelStyle())
+                            .fixedSize()
+                    }
                 }
                 .foregroundColor(.secondary)
             }
@@ -66,5 +75,24 @@ struct MusicItemView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+    }
+
+    /// 播放次数的显示文字,1万以上显示为"1.2万"
+    private static func playCountText(_ count: Int) -> String {
+        if count < 10000{
+            return String(count)
+        }
+        let text = String(format: "%.1f", Double(count) / 10000)
+        return (text.hasSuffix(".0") ? String(text.dropLast(2)) : text) + "万"
+    }
+}
+
+/// 播放次数:图标和数字挨在一起
+private struct PlayCountLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 2){
+            configuration.icon
+            configuration.title
+        }
     }
 }

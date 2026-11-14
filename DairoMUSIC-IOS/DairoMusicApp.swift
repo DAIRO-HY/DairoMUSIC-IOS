@@ -27,6 +27,9 @@ struct DairoMusicApp: App {
 
         //恢复上次的播放列表,不自动播放
         PlayerManager.shared.restore()
+
+        //提交上次没有提交成功的播放记录,网络恢复时再提交
+        PlayCountUtil.start()
     }
 
     var body: some Scene {

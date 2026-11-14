@@ -30,6 +30,9 @@ struct MusicModel : Codable, Hashable {
   	/** 视频状态 0:未采集 1:采集中 2:有视频 3:没有视频 4:视频已删除 5:采集失败 **/
   var videoState: Int?
 
+  	/** 播放次数,只有曲库的搜索结果才有 **/
+  var playCount: Int?
+
 }
 
 struct MusicFileModel : Codable, Hashable {

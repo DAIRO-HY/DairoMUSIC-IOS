@@ -32,6 +32,9 @@ final class NetworkMonitor {
 
     static let shared = NetworkMonitor()
 
+    /// 从没有网络恢复到有网络时的通知,在主线程发送
+    static let AVAILABLE = Notification.Name("NetworkMonitor.AVAILABLE")
+
     private let monitor = NWPathMonitor()
 
     /// 最新的网络状态,在监听线程里更新
@@ -42,8 +45,16 @@ final class NetworkMonitor {
     private init() {
         self.monitor.pathUpdateHandler = { [weak self] path in
             self?.lock.lock()
+            let old = self?.path
             self?.path = path
             self?.lock.unlock()
+
+            //第一次获取到网络状态时不算恢复
+            if let old, old.status != .satisfied && path.status == .satisfied{
+                DispatchQueue.main.async{
+                    NotificationCenter.default.post(name: NetworkMonitor.AVAILABLE, object: nil)
+                }
+            }
         }
         self.monitor.start(queue: DispatchQueue(label: "NetworkMonitor"))
     }

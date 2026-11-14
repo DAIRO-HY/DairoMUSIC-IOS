@@ -258,6 +258,9 @@ enum SettingShared {
         FavoriteShared.clearMemory()
         MusicShared.clearMemory()
         PlayerManager.shared.restore()
+
+        //提交新账号上次没有提交成功的播放记录
+        PlayCountUtil.submit()
     }
 
     /*----------------------------------------------------------------------------------*/

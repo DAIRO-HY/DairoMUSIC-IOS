@@ -25,6 +25,11 @@ enum MusicApi {
     return ApiHttp<VideoModel>(ApiConst.MUSIC_VIDEO,method: "GET",parameter: ["id":id])
   }
 
+  //提交播放记录,ids为播放完成的歌曲ID,逗号分隔,播放了几次就出现几次,一次最多500个
+  static func play(ids: String) -> ApiHttp<EmptyModel>{
+    return ApiHttp<EmptyModel>(ApiConst.MUSIC_PLAY,method: "POST",parameter: ["ids":ids])
+  }
+
   //采集平台的歌曲加入曲库,返回歌曲ID
   static func collect(name: String,logo: String?,platform: String,extra: String) -> ApiHttp<Int64>{
     var parameter: [String : Codable] = ["name":name,"platform":platform,"extra":extra]

@@ -78,6 +78,12 @@ final class PlayerManager: ObservableObject {
     /// 当前歌曲的监听,切换歌曲时取消
     private var cancellables = Set<AnyCancellable>()
 
+    /// 这一遍播放是否被拖动到了快结束的位置,拖动到结尾的不算播放次数
+    private var isSeekedToEnd = false
+
+    /// 拖动进度之后离结尾少于这个时间(秒)时,播放结束不算播放次数
+    private static let PLAY_COUNT_MIN_SECONDS: Double = 10
+
     /// 连续播放失败的次数,超过列表里的歌曲数时停止播放
     private var errorCount = 0
 
@@ -281,6 +287,8 @@ final class PlayerManager: ObservableObject {
 
     /// 跳转到指定位置
     func seek(_ seconds: Double) {
+        let duration = self.progress.duration
+        self.isSeekedToEnd = duration > 0 && duration - seconds < PlayerManager.PLAY_COUNT_MIN_SECONDS
         self.progress.currentTime = seconds
         self.player?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600)){ [weak self] _ in
             self?.updateNowPlaying()
@@ -352,6 +360,7 @@ final class PlayerManager: ObservableObject {
     /// - Parameter direction: 离线时当前歌曲不能播放,往哪个方向找能播放的歌曲,1:往后 -1:往前
     private func load(startTime: Double, direction: Int = 1) {
         self.releasePlayer()
+        self.isSeekedToEnd = false
         guard let music = self.music else{
             return
         }
@@ -638,6 +647,11 @@ final class PlayerManager: ObservableObject {
 
     /// 歌曲播放结束,自动播放下一曲;定时停止正在等歌曲播放结束时,切换到下一曲但不播放
     private func onSongEnd() {
+
+        //自然播放到结尾的算一次播放
+        if !self.isSeekedToEnd, let music = self.music{
+            PlayCountUtil.add(music)
+        }
         if !SleepTimer.shared.consumeSongEnd(){
             self.next(auto: true)
             return
