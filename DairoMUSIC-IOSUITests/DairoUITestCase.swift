@@ -158,7 +158,7 @@ class DairoUITestCase: XCTestCase {
             Thread.sleep(forTimeInterval: 1)
         }
         self.app.buttons["下一步"].tap()
-        if !self.app.textFields["请输入邮箱"].waitForExistence(timeout: 10){
+        if !self.app.textFields["邮箱或用户名"].waitForExistence(timeout: 10){
             self.shot("没有进入登录页")
             XCTFail("没有进入登录页")
         }
@@ -176,7 +176,7 @@ class DairoUITestCase: XCTestCase {
         if self.app.textFields["例 192.168.1.100:8020"].waitForExistence(timeout: 3){
             self.toLoginPage()
         }
-        self.app.textFields["请输入邮箱"].clearAndType(email)
+        self.app.textFields["邮箱或用户名"].clearAndType(email)
         self.typePassword(self.app.secureTextFields["请输入密码"], pwd)
         self.hittableButton("登录").tap()
     }

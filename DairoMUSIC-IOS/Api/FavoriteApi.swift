@@ -22,7 +22,7 @@ enum FavoriteApi {
     return ApiHttp<EmptyModel>(ApiConst.FAVORITE_EDIT,method: "POST",parameter: ["id":id,"name":name,"description":description])
   }
 
-  //上传封面,返回封面地址
+  //上传封面,返回封面地址;不限大小,服务器会居中裁切成正方形并缩小
   static func logo(id: Int64,jpeg: Data) -> ApiHttp<String>{
     return ApiHttp<String>(ApiConst.FAVORITE_LOGO,method: "POST",parameter: ["id":id]).file(name: "file",fileName: "logo.jpg",mimeType: "image/jpeg",data: jpeg)
   }

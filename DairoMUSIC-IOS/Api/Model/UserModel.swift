@@ -3,8 +3,11 @@ struct UserModel : Codable {
   	/** 会员ID **/
   var id: Int64
 
-  	/** 邮箱,临时会员为空 **/
+  	/** 邮箱,临时会员为空;后台创建的只有用户名的会员也为空 **/
   var email: String?
+
+  	/** 用户名,只能由后台设置,可以用来登录 **/
+  var name: String?
 
   	/** 昵称 **/
   var nick: String?

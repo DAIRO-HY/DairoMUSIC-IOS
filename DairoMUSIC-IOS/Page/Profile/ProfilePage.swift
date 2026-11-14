@@ -34,19 +34,24 @@ struct ProfilePage: View {
                 }
                 SettingGroup{
                     SettingTextField(title: "昵称", text: self.$vm.nick, placeholder: "请输入昵称")
-                    if self.vm.user?.isTemp == true{
-                        SettingNavigationLink("绑定邮箱",tip: "绑定之后可以用邮箱登录"){
+                    if let name = self.vm.user?.name, !name.isEmpty{
+                        SettingText(title: "用户名：" + name)
+                    }
+                    if let email = self.vm.user?.email, !email.isEmpty{
+                        SettingText(title: "邮箱：" + email)
+                    } else if self.vm.user != nil{
+
+                        //临时会员和后台创建的只有用户名的会员都可以绑定邮箱
+                        SettingNavigationLink("绑定邮箱",tip: self.vm.user?.isTemp == true ? "绑定之后可以用邮箱登录" : "忘记密码时可以用邮箱找回"){
                             EmailCodePage(.bindEmail).anyView
                         }
-                    } else {
-                        SettingText(title: "邮箱：" + (self.vm.user?.email ?? ""))
                     }
                 }
                 SettingGroup{
                     SettingButtonSingle("保存昵称",action: self.vm.onSaveNickClick)
                 }
                 if self.vm.user?.isTemp == false{
-                    SettingGroup(footer: "注销之后歌单都会删除,邮箱可以重新注册"){
+                    SettingGroup(footer: self.vm.user?.email == nil ? "注销之后歌单都会删除" : "注销之后歌单都会删除,邮箱可以重新注册"){
                         SettingButtonSingle("注销账号"){
                             self.vm.unregisterPwd = ""
                             self.showUnregisterAlert = true

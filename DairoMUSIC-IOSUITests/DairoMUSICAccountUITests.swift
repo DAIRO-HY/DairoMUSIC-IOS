@@ -133,7 +133,7 @@ final class DairoMUSICAccountUITests: DairoUITestCase {
     /// 通过接口登录并注销账号,登录不上时什么也不做
     private func unregisterByApi(email: String, pwd: String) {
         let host = self.server.hasPrefix("http") ? self.server : "http://" + self.server
-        let login = self.post(host + "/api/user/login", body: "email=\(email)&pwd=\(pwd)&deviceId=ui-test-clean&clientFlag=2&clientVersion=0", token: nil)
+        let login = self.post(host + "/api/user/login", body: "account=\(email)&pwd=\(pwd)&deviceId=ui-test-clean&clientFlag=2&clientVersion=0", token: nil)
         guard let data = login, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let token = json["token"] as? String else{
             return
         }

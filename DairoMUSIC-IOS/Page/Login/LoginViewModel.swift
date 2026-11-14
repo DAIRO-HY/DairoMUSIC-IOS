@@ -14,8 +14,8 @@ class LoginViewModel: ObservableObject {
     /// 服务器地址,在服务器页面输入,登录页面只显示
     @Published var domain: String
 
-    /// 邮箱
-    @Published var email: String
+    /// 登录账号:邮箱或用户名
+    @Published var account: String
 
     /// 密码
     @Published var pwd = ""
@@ -29,9 +29,9 @@ class LoginViewModel: ObservableObject {
     //编辑模式时,当前账号所在的索引
     var editLoggedIndex: Int?
 
-    init(domain: String = "", email: String = "", editLoggedIndex: Int? = nil) {
+    init(domain: String = "", account: String = "", editLoggedIndex: Int? = nil) {
         self.domain = domain
-        self.email = email
+        self.account = account
         self.editLoggedIndex = editLoggedIndex
     }
 
@@ -73,9 +73,9 @@ class LoginViewModel: ObservableObject {
 
     /// 登录按钮点击事件
     func onLoginClick(){
-        let email = self.email.trim()
-        if email.isEmpty {
-            Toast.show("邮箱必填")
+        let account = self.account.trim()
+        if account.isEmpty {
+            Toast.show("请输入邮箱或用户名")
             return
         }
         let pwd = self.pwd
@@ -84,7 +84,7 @@ class LoginViewModel: ObservableObject {
             return
         }
         SettingShared.login(domain: self.domain, editIndex: self.editLoggedIndex, request: {
-            UserApi.login(email: email, pwd: pwd)
+            UserApi.login(account: account, pwd: pwd)
         }, success: {
             DiscoverPage().relaunch()
         })

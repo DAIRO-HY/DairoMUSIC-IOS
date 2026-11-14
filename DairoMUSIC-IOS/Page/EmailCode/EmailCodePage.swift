@@ -25,7 +25,7 @@ struct EmailCodePage: View {
                         ServerLabel(self.vm.domain).frame(maxWidth: .infinity)
                     }
                 }
-                SettingGroup(footer: self.vm.type == .bindEmail ? "绑定之后可以使用邮箱和密码登录,歌单都会保留" : nil){
+                SettingGroup(footer: self.footer){
                     SettingTextField(title: "邮箱", text: self.$vm.email, placeholder: "请输入邮箱")
                     SettingCustomView{
                         HStack{
@@ -44,14 +44,29 @@ struct EmailCodePage: View {
                         .padding(.horizontal)
                         .padding(.vertical, 11)
                     }
-                    SettingTextField(title: self.vm.type == .resetPwd ? "新密码" : "密码", text: self.$vm.pwd, placeholder: "6~32位", type: .password)
-                    SettingTextField(title: "确认密码", text: self.$vm.repwd, placeholder: "请再次输入密码", type: .password)
+                    if self.vm.isVerifyPwd{
+                        SettingTextField(title: "登录密码", text: self.$vm.pwd, placeholder: "请输入当前的登录密码", type: .password)
+                    } else {
+                        SettingTextField(title: self.vm.type == .resetPwd ? "新密码" : "密码", text: self.$vm.pwd, placeholder: "6~32位", type: .password)
+                        SettingTextField(title: "确认密码", text: self.$vm.repwd, placeholder: "请再次输入密码", type: .password)
+                    }
                 }
                 SettingGroup{
                     SettingButtonSingle(self.vm.type.title, action: self.vm.onSubmitClick)
                 }
             }
         }
+    }
+
+    /// 绑定邮箱的说明
+    private var footer: String? {
+        if self.vm.type != .bindEmail{
+            return nil
+        }
+        if self.vm.isVerifyPwd{
+            return "绑定之后可以使用邮箱或用户名登录,密码不变,忘记密码时可以用邮箱找回"
+        }
+        return "绑定之后可以使用邮箱和密码登录,歌单都会保留"
     }
 }
 

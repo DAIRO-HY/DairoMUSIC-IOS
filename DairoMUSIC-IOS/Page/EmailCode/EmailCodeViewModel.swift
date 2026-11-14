@@ -17,7 +17,7 @@ enum EmailCodeType: String {
     /// 重置密码
     case resetPwd = "reset_pwd"
 
-    /// 临时会员绑定邮箱
+    /// 绑定邮箱:临时会员,或者后台创建的只有用户名的会员
     case bindEmail = "bind_email"
 
     /// 页面标题
@@ -56,9 +56,13 @@ class EmailCodeViewModel: ObservableObject {
 
     private var timer: Timer?
 
+    /// 只有用户名的会员绑定邮箱:密码填当前的登录密码确认身份,不修改密码
+    let isVerifyPwd: Bool
+
     init(_ type: EmailCodeType, domain: String) {
         self.type = type
         self.domain = domain
+        self.isVerifyPwd = type == .bindEmail && SettingShared.user?.isTemp == false
     }
 
     /// 发送验证码点击事件
@@ -115,11 +119,15 @@ class EmailCodeViewModel: ObservableObject {
             Toast.show("请输入验证码")
             return
         }
-        if self.pwd.count < 6 || self.pwd.count > 32{
+        if self.isVerifyPwd{
+            if self.pwd.isEmpty{
+                Toast.show("请输入当前的登录密码")
+                return
+            }
+        } else if self.pwd.count < 6 || self.pwd.count > 32{
             Toast.show("密码长度为6~32位")
             return
-        }
-        if self.pwd != self.repwd{
+        } else if self.pwd != self.repwd{
             Toast.show("两次输入的密码不一致")
             return
         }
@@ -137,7 +145,7 @@ class EmailCodeViewModel: ObservableObject {
             let domain = self.domain
             UserApi.resetPwd(email: email, code: code, pwd: pwd).domain(domain).send{
                 Toast.show("密码已重置,请重新登录")
-                LoginPage(LoginViewModel(domain: domain, email: email)).relaunch()
+                LoginPage(LoginViewModel(domain: domain, account: email)).relaunch()
             }
         case .bindEmail:
             UserApi.bindEmail(email: email, code: code, pwd: pwd).send{ _ in

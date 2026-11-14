@@ -10,9 +10,6 @@ import DairoUI_IOS
 
 class FavoriteEditViewModel: ObservableObject {
 
-    ///上传封面的最大边长
-    private static let LOGO_MAX_SIZE: CGFloat = 800
-
     let favoriteId: Int64
 
     @Published var name = ""
@@ -45,7 +42,7 @@ class FavoriteEditViewModel: ObservableObject {
 
     /// 选择封面之后上传
     func onLogoPick(_ image: UIImage){
-        guard let jpeg = image.toJpeg(maxSize: FavoriteEditViewModel.LOGO_MAX_SIZE) else{
+        guard let jpeg = image.toUploadJpeg() else{
             Toast.show("读取图片失败")
             return
         }

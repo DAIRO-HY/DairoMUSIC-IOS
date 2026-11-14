@@ -8,7 +8,7 @@
 import SwiftUI
 import DairoUI_IOS
 
-/// 登录的第二步:服务器已经确定,输入邮箱和密码
+/// 登录的第二步:服务器已经确定,输入邮箱或用户名和密码
 struct LoginPage: View {
 
     //系统弹窗等导致App状态变化时,页面会重新创建,必须用StateObject才能保留已输入的内容
@@ -48,7 +48,7 @@ struct LoginPage: View {
                     .frame(maxWidth: .infinity)
                 }
                 SettingGroup{
-                    SettingTextField(title: "邮箱", text: self.$vm.email, placeholder: "请输入邮箱")
+                    SettingTextField(title: "账号", text: self.$vm.account, placeholder: "邮箱或用户名")
                     SettingTextField(title: "密码", text: self.$vm.pwd, placeholder: "请输入密码", type: .password)
                 }
                 SettingGroup{
@@ -69,7 +69,7 @@ struct LoginPage: View {
                         Group{
                             if self.isRoot{
                                 Button(action: {
-                                    ServerPage(LoginViewModel(domain: self.vm.domain, email: self.vm.email, editLoggedIndex: self.vm.editLoggedIndex)).relaunch()
+                                    ServerPage(LoginViewModel(domain: self.vm.domain, account: self.vm.account, editLoggedIndex: self.vm.editLoggedIndex)).relaunch()
                                 }){
                                     Text("更换服务器")
                                 }
@@ -100,7 +100,7 @@ struct LoginPage: View {
 
         //小屏手机上键盘会挡住登录按钮,信息都填好时按键盘上的回车直接登录
         .onSubmit {
-            if !self.vm.email.isEmpty && !self.vm.pwd.isEmpty{
+            if !self.vm.account.isEmpty && !self.vm.pwd.isEmpty{
                 self.vm.onLoginClick()
             }
         }

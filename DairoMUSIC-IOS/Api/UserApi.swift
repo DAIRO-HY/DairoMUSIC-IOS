@@ -12,10 +12,10 @@ enum UserApi {
     return ApiHttp<LoginModel>(ApiConst.USER_TEMP_LOGIN,method: "POST",parameter: UserApi.deviceParameter).noAuth()
   }
 
-  //邮箱登录,pwd为明文密码
-  static func login(email: String,pwd: String) -> ApiHttp<LoginModel>{
+  //登录,account为邮箱或用户名(用户名不区分大小写),pwd为明文密码
+  static func login(account: String,pwd: String) -> ApiHttp<LoginModel>{
     var parameter = UserApi.deviceParameter
-    parameter["email"] = email
+    parameter["account"] = account
     parameter["pwd"] = pwd
     return ApiHttp<LoginModel>(ApiConst.USER_LOGIN,method: "POST",parameter: parameter).noAuth()
   }
@@ -34,7 +34,7 @@ enum UserApi {
     return ApiHttp<EmptyModel>(ApiConst.USER_RESET_PWD,method: "POST",parameter: ["email":email,"code":code,"pwd":pwd]).noAuth()
   }
 
-  //临时会员绑定邮箱成为正式会员
+  //绑定邮箱:临时会员绑定之后成为正式会员,pwd为新的登录密码;只有用户名没有邮箱的会员pwd为当前的登录密码,用来确认身份,密码不会修改
   static func bindEmail(email: String,code: String,pwd: String) -> ApiHttp<UserModel>{
     return ApiHttp<UserModel>(ApiConst.USER_BIND_EMAIL,method: "POST",parameter: ["email":email,"code":code,"pwd":pwd])
   }
@@ -49,7 +49,7 @@ enum UserApi {
     return ApiHttp<EmptyModel>(ApiConst.USER_EDIT,method: "POST",parameter: ["nick":nick])
   }
 
-  //上传头像,返回头像地址
+  //上传头像,返回头像地址;不限大小,服务器会居中裁切成正方形并缩小
   static func avatar(jpeg: Data) -> ApiHttp<String>{
     return ApiHttp<String>(ApiConst.USER_AVATAR,method: "POST").file(name: "file",fileName: "avatar.jpg",mimeType: "image/jpeg",data: jpeg)
   }

@@ -167,7 +167,7 @@ enum SettingShared {
         let account = SettingShared.loggedUser
         SettingShared.logout()
         if let account{
-            LoginPage(LoginViewModel(domain: account.domain, email: account.email)).relaunch()
+            LoginPage(LoginViewModel(domain: account.domain, account: account.account)).relaunch()
         } else {
             ServerPage().relaunch()
         }
@@ -191,7 +191,7 @@ enum SettingShared {
             }.send{ loginInfo in//登录成功
                 PlayerManager.shared.stop()
                 let user = loginInfo.user
-                let account = AccountInfo(domain: domain, serverId: config.serverId, userId: user.id, email: user.email ?? "",
+                let account = AccountInfo(domain: domain, serverId: config.serverId, userId: user.id, account: SettingShared.loginAccount(user),
                                           name: SettingShared.accountName(user), token: loginInfo.token, isLogining: true)
                 SettingShared.loggedUserList = SettingShared.addLoggedUser(account, editIndex: editIndex)
                 SettingShared.domain = domain
@@ -249,21 +249,30 @@ enum SettingShared {
         }
     }
 
-    /// 会员信息变化之后,更新已登录列表里显示的名字,临时会员绑定邮箱之后也会更新邮箱
+    /// 会员信息变化之后,更新已登录列表里显示的名字,绑定邮箱之后也会更新登录账号
     private static func updateLoggedUser(_ user: UserModel) {
         var list = SettingShared.loggedUserList
         guard let index = list.firstIndex(where: { $0.isLogining }) else{
             return
         }
-        list[index].email = user.email ?? ""
+        list[index].account = SettingShared.loginAccount(user)
         list[index].name = SettingShared.accountName(user)
         SettingShared.loggedUserList = list
     }
 
-    /// 账号显示的名字,临时会员没有邮箱时显示昵称
-    private static func accountName(_ user: UserModel) -> String {
+    /// 登录账号,有邮箱时用邮箱,没有邮箱时用用户名,临时会员为空
+    private static func loginAccount(_ user: UserModel) -> String {
         if let email = user.email, !email.isEmpty{
             return email
+        }
+        return user.name ?? ""
+    }
+
+    /// 账号显示的名字,有登录账号时显示登录账号,临时会员显示昵称
+    private static func accountName(_ user: UserModel) -> String {
+        let account = SettingShared.loginAccount(user)
+        if !account.isEmpty{
+            return account
         }
         return user.nick ?? "临时会员"
     }

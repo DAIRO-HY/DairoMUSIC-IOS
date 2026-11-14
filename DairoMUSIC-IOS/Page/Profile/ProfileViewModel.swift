@@ -10,9 +10,6 @@ import DairoUI_IOS
 
 class ProfileViewModel: ObservableObject {
 
-    ///上传头像的最大边长
-    private static let AVATAR_MAX_SIZE: CGFloat = 512
-
     /// 当前登录的会员信息
     @Published var user = SettingShared.user
 
@@ -37,7 +34,7 @@ class ProfileViewModel: ObservableObject {
 
     /// 选择头像之后上传
     func onAvatarPick(_ image: UIImage){
-        guard let jpeg = image.toJpeg(maxSize: ProfileViewModel.AVATAR_MAX_SIZE) else{
+        guard let jpeg = image.toUploadJpeg() else{
             Toast.show("读取图片失败")
             return
         }

@@ -83,11 +83,11 @@ struct LoggedPage: View {
             }
             Button("编辑") {
                 let actionItem = self.vm.actionItem
-                LoginPage(LoginViewModel(domain: actionItem.domain, email: actionItem.email, editLoggedIndex: self.vm.actionIndex)).relaunch()
+                LoginPage(LoginViewModel(domain: actionItem.domain, account: actionItem.account, editLoggedIndex: self.vm.actionIndex)).relaunch()
             }
             Button("复制") {
                 let actionItem = self.vm.actionItem
-                LoginPage(LoginViewModel(domain: actionItem.domain, email: actionItem.email)).relaunch()
+                LoginPage(LoginViewModel(domain: actionItem.domain, account: actionItem.account)).relaunch()
             }
             Button("移除") {
                 let actionItem = self.vm.actionItem
@@ -107,7 +107,7 @@ struct LoggedPage: View {
     /// 切换到选择的账号
     private func onSwitchAccount(_ account: AccountInfo){
         if account.token.isEmpty{//账号已经退出登录,需要重新输入密码
-            LoginPage(LoginViewModel(domain: account.domain, email: account.email)).relaunch()
+            LoginPage(LoginViewModel(domain: account.domain, account: account.account)).relaunch()
             return
         }
         SettingShared.switchAccount(account, success:{

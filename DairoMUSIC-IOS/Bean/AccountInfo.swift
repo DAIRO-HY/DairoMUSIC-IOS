@@ -17,8 +17,8 @@ struct AccountInfo : Codable,Hashable{
     /// 会员ID
     var userId: Int64
 
-    /// 登录邮箱,临时会员为空
-    var email: String
+    /// 登录账号,有邮箱时是邮箱,只有用户名的会员是用户名,临时会员为空
+    var account: String
 
     /// 显示的名字,邮箱或者临时会员的昵称
     var name: String
@@ -28,6 +28,11 @@ struct AccountInfo : Codable,Hashable{
 
     /// 是否当前登录的账号
     var isLogining: Bool  = false
+
+    /// 以前只能用邮箱登录,保存的字段名是email
+    private enum CodingKeys: String, CodingKey {
+        case domain, serverId, userId, account = "email", name, token, isLogining
+    }
 
     /// 是否同一个账号
     func isSame(_ other: AccountInfo) -> Bool {
