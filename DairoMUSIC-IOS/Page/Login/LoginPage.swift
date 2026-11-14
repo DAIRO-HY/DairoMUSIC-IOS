@@ -48,7 +48,9 @@ struct LoginPage: View {
                     .frame(maxWidth: .infinity)
                 }
                 SettingGroup{
-                    SettingTextField(title: "账号", text: self.$vm.account, placeholder: "邮箱或用户名")
+                    SettingCustomView{
+                        AccountTextField(text: self.$vm.account)
+                    }
                     SettingTextField(title: "密码", text: self.$vm.pwd, placeholder: "请输入密码", type: .password)
                 }
                 SettingGroup{
@@ -105,6 +107,32 @@ struct LoginPage: View {
             }
         }
         .onAppear(perform: self.vm.loadConfig)
+    }
+}
+
+/// 登录账号输入框,和SettingTextField的布局一样;可以填邮箱或用户名,用普通键盘,不用邮箱键盘
+private struct AccountTextField: View {
+
+    @Binding var text: String
+
+    @Environment(\.edgePadding) private var edgePadding
+
+    var body: some View {
+        HStack(spacing: 12){
+            Text("账号")
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 14)
+            TextField("邮箱或用户名", text: self.$text)
+                .textContentType(.username)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .padding(.horizontal, self.edgePadding)
+        }
+        .padding(.horizontal, self.edgePadding)
+        .accessibilityElement(children: .combine)
     }
 }
 
