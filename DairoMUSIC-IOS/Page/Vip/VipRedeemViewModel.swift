@@ -78,7 +78,7 @@ class VipRedeemViewModel: ObservableObject {
                 return
             }
             if let vip = result.vip{
-                SettingShared.updateVip(vip)
+                SettingStore.updateVip(vip)
             }
             self.cardNo = ""
             self.cardPwd = ""

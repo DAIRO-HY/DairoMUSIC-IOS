@@ -11,10 +11,10 @@ import DairoUI_IOS
 class ProfileViewModel: ObservableObject {
 
     /// 当前登录的会员信息
-    @Published var user = SettingShared.user
+    @Published var user = SettingStore.user
 
     /// 昵称
-    @Published var nick = SettingShared.user?.nick ?? ""
+    @Published var nick = SettingStore.user?.nick ?? ""
 
     /// 注销账号时验证的密码
     @Published var unregisterPwd = ""
@@ -47,12 +47,12 @@ class ProfileViewModel: ObservableObject {
     func onUnregisterClick(){
         UserApi.unregister(pwd: self.unregisterPwd).send{
             Toast.show("账号已注销")
-            let account = SettingShared.loggedUser
-            SettingShared.logout()
+            let account = SettingStore.currentAccount
+            SettingStore.logout()
 
             //注销之后这个账号不能再登录,从已登录列表里删除
             if let account{
-                SettingShared.loggedUserList = SettingShared.loggedUserList.filter{ !$0.isSame(account) }
+                SettingStore.accountList = SettingStore.accountList.filter{ !$0.isSame(account) }
             }
             ServerPage().relaunch()
         }
@@ -60,7 +60,7 @@ class ProfileViewModel: ObservableObject {
 
     /// 刷新会员信息
     private func loadUser(){
-        SettingShared.loadUserInBackground{
+        SettingStore.loadUserInBackground{
             self.user = $0
         }
     }

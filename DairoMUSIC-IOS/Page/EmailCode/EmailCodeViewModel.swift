@@ -62,7 +62,7 @@ class EmailCodeViewModel: ObservableObject {
     init(_ type: EmailCodeType, domain: String) {
         self.type = type
         self.domain = domain
-        self.isVerifyPwd = type == .bindEmail && SettingShared.user?.isTemp == false
+        self.isVerifyPwd = type == .bindEmail && SettingStore.user?.isTemp == false
     }
 
     /// 发送验证码点击事件
@@ -83,7 +83,7 @@ class EmailCodeViewModel: ObservableObject {
         
         //注册和重置密码时还没有登录,请求登录页面选择的服务器
         let domain = self.domain
-        SettingShared.checkServer(domain: domain){ config in
+        SettingStore.checkServer(domain: domain){ config in
             if self.type == .register && !config.allowRegister{
                 Toast.show("该服务器没有开放注册")
                 return
@@ -135,7 +135,7 @@ class EmailCodeViewModel: ObservableObject {
         let pwd = self.pwd
         switch self.type {
         case .register:
-            SettingShared.login(domain: self.domain, request: {
+            SettingStore.login(domain: self.domain, request: {
                 UserApi.register(email: email, pwd: pwd, code: code)
             }, success: {
                 Toast.show("注册成功")
@@ -150,7 +150,7 @@ class EmailCodeViewModel: ObservableObject {
         case .bindEmail:
             UserApi.bindEmail(email: email, code: code, pwd: pwd).send{ _ in
                 Toast.show("绑定成功")
-                SettingShared.loadUserInBackground()
+                SettingStore.loadUserInBackground()
                 MinePage().relaunch()
             }
         }

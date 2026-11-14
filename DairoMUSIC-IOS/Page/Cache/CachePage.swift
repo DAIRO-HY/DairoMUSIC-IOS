@@ -17,10 +17,10 @@ struct CachePage: View {
     @State private var clearGroup: String?
 
     /// 音乐边播边缓存
-    @AppStorage(SettingShared.KEY_MUSIC_CACHE) private var musicCache = true
+    @AppStorage(SettingStore.KEY_MUSIC_CACHE) private var musicCache = true
 
     /// 视频边播边缓存
-    @AppStorage(SettingShared.KEY_VIDEO_CACHE) private var videoCache = false
+    @AppStorage(SettingStore.KEY_VIDEO_CACHE) private var videoCache = false
 
     var body: some View {
         SettingStack(embedInNavigationStack: false) {
@@ -117,7 +117,7 @@ class CacheViewModel: ObservableObject {
     @Published var downloadVideoText = "计算中"
 
     /// 缓存上限(MB)
-    @Published var maxSize = SettingShared.fileSdkMaxCacheSize
+    @Published var maxSize = SettingStore.fileSdkMaxCacheSize
 
     /// 统计缓存和下载的大小,页面显示时刷新,从下载列表删除之后回来会更新
     func loadSize(){
@@ -168,7 +168,7 @@ class CacheViewModel: ObservableObject {
 
     /// 修改缓存上限
     func onMaxSizeChange(_ value: Int) -> Bool{
-        SettingShared.fileSdkMaxCacheSize = value
+        SettingStore.fileSdkMaxCacheSize = value
         FileSdkUtil.setMaxCacheSize(value)
         return true
     }

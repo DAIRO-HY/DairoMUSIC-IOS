@@ -11,7 +11,7 @@ import DairoUI_IOS
 
 class MusicListViewModel: ObservableObject {
 
-    /// 歌单ID,最近播放时为FavoriteType.LATE
+    /// 歌单ID,最近播放时为FavoriteId.RECENT
     let favoriteId: Int64
 
     /// 歌单名
@@ -40,8 +40,8 @@ class MusicListViewModel: ObservableObject {
     init(favoriteId: Int64, name: String) {
         self.favoriteId = favoriteId
         self.name = name
-        if favoriteId == FavoriteType.LATE{
-            NotificationCenter.default.publisher(for: EventName.LATE_CHANGE).sink{ [weak self] _ in
+        if favoriteId == FavoriteId.RECENT{
+            NotificationCenter.default.publisher(for: EventName.RECENT_CHANGE).sink{ [weak self] _ in
                 self?.loadData()
             }.store(in: &self.cancellables)
         } else {
@@ -53,23 +53,23 @@ class MusicListViewModel: ObservableObject {
         if self.isMine{
 
             //我的歌单先显示本地缓存,再从服务器更新
-            MusicShared.loadInBackground()
+            MusicStore.loadInBackground()
         }
     }
 
     /// 加载数据
     func loadData(){
-        if self.favoriteId == FavoriteType.LATE{
-            self.musicList = MusicShared.lateMusic
+        if self.favoriteId == FavoriteId.RECENT{
+            self.musicList = MusicStore.recentMusic
             return
         }
-        if let favorite = FavoriteShared.byId(self.favoriteId){//我的歌单
+        if let favorite = FavoriteStore.byId(self.favoriteId){//我的歌单
             self.isMine = true
             self.isLike = favorite.isLike
             self.name = favorite.name
             self.description = favorite.description
             self.logo = favorite.logo
-            self.musicList = MusicShared.musics(favoriteId: self.favoriteId)
+            self.musicList = MusicStore.musics(favoriteId: self.favoriteId)
             return
         }
         if self.isMine || self.isLoading{
@@ -97,13 +97,13 @@ class MusicListViewModel: ObservableObject {
 
     /// 从歌单删除歌曲
     func remove(_ music: MusicModel){
-        FavoriteShared.removeMusic(musicId: music.id, favoriteId: self.favoriteId){
+        FavoriteStore.removeMusic(musicId: music.id, favoriteId: self.favoriteId){
             Toast.show("已删除")
         }
     }
 
     /// 清空最近播放
-    func clearLate(){
-        MusicShared.clearLate()
+    func clearRecent(){
+        MusicStore.clearRecent()
     }
 }

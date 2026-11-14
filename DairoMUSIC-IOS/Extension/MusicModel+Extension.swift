@@ -1,5 +1,5 @@
 //
-//  MusicModel++.swift
+//  MusicModel+Extension.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/07.
@@ -61,7 +61,7 @@ extension MusicModel {
 
     /// 按设置的播放音质选择的歌曲文件
     var settingFile: MusicFileModel? {
-        return self.file(bitRate: SettingShared.bitRate)
+        return self.file(bitRate: SettingStore.bitRate)
     }
 
     /// 按文件ID找歌曲文件
@@ -82,7 +82,7 @@ extension MusicModel {
         guard let bitRate, bitRate > 0 else{
             return "未知"
         }
-        if bitRate >= SettingShared.BIT_RATE_LOSSLESS{
+        if bitRate >= SettingStore.BIT_RATE_LOSSLESS{
             return "无损"
         }
         if bitRate >= 320{

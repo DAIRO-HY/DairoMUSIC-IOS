@@ -53,7 +53,7 @@ class VideoViewModel: ObservableObject {
     @Published var showOriginalConfirm = false
 
     /// 当前清晰度
-    @Published private(set) var quality = SettingShared.videoQuality
+    @Published private(set) var quality = SettingStore.videoQuality
 
     /// 是否只能播放原画(还没有收藏的歌曲)
     @Published private(set) var isOriginalOnly = false
@@ -170,12 +170,12 @@ class VideoViewModel: ObservableObject {
         if quality == self.quality{
             return
         }
-        if quality == SettingShared.VIDEO_QUALITY_ORIGINAL && self.isOriginalVipOnly{
+        if quality == SettingStore.VIDEO_QUALITY_ORIGINAL && self.isOriginalVipOnly{
             Toast.show("原画需要VIP")
             return
         }
         self.quality = quality
-        SettingShared.videoQuality = quality
+        SettingStore.videoQuality = quality
         self.reloadKeepingTime()
     }
 
@@ -228,7 +228,7 @@ class VideoViewModel: ObservableObject {
         self.stop()
 
         //非VIP播放流畅版时只临时改了清晰度,每次加载都按设置重新选择
-        self.quality = SettingShared.videoQuality
+        self.quality = SettingStore.videoQuality
         guard let music = self.music else{
             self.tip = "没有正在播放的歌曲"
             return
@@ -276,7 +276,7 @@ class VideoViewModel: ObservableObject {
             self.play(source)
             return
         }
-        if !self.isOriginalConfirmed && self.quality != SettingShared.VIDEO_QUALITY_ORIGINAL{
+        if !self.isOriginalConfirmed && self.quality != SettingStore.VIDEO_QUALITY_ORIGINAL{
             self.tip = "当前音乐未收藏,只能播放原画版"
             self.showOriginalConfirm = true
             return
@@ -346,11 +346,11 @@ class VideoViewModel: ObservableObject {
     private func onVideo(_ video: VideoModel, music: MusicModel) {
         switch video.state{
         case 2://有视频
-            var file = self.quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? video.original : video.smooth
+            var file = self.quality == SettingStore.VIDEO_QUALITY_ORIGINAL ? video.original : video.smooth
 
             //非VIP不能看原画,改为播放流畅版(不修改设置,成为VIP之后还是播放原画)
             if file?.vipOnly == true, let smooth = video.smooth, smooth.vipOnly != true{
-                self.quality = SettingShared.VIDEO_QUALITY_SMOOTH
+                self.quality = SettingStore.VIDEO_QUALITY_SMOOTH
                 file = smooth
             }
             guard let file else{
@@ -409,7 +409,7 @@ class VideoViewModel: ObservableObject {
         let url: URL?
         if let path = FileSdkUtil.cachedPath(source){
             url = URL(fileURLWithPath: path)
-        } else if SettingShared.videoCache{
+        } else if SettingStore.videoCache{
             url = FileSdkUtil.open(source)
         } else {
             url = URL(string: source.url)

@@ -51,8 +51,8 @@ struct MusicCorrectPage: View {
         }
         MusicApi.correct(id: self.musicId, name: self.name.trim(), artist: self.artist.trim(), album: self.album.trim()).send{
             Toast.show("提交成功")
-            if SettingShared.user?.isFriend == true{
-                MusicShared.loadInBackground()
+            if SettingStore.user?.isFriend == true{
+                MusicStore.loadInBackground()
             }
             self.dismiss()
         }

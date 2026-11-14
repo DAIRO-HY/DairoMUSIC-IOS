@@ -22,7 +22,7 @@ final class PlayerManager: ObservableObject {
     static let shared = PlayerManager()
 
     /// 播放信息的本地缓存名
-    private static let _KEY_PLAYING_INFO = "playing_info"
+    private static let KEY_PLAYING_INFO = "playing_info"
 
     /// 播放列表
     @Published private(set) var playList = [MusicModel]()
@@ -30,8 +30,8 @@ final class PlayerManager: ObservableObject {
     /// 当前播放的序号
     @Published private(set) var index = 0
 
-    /// 播放列表的来源,参考FavoriteType
-    @Published private(set) var favoriteId = FavoriteType.NONE
+    /// 播放列表的来源,参考FavoriteId
+    @Published private(set) var favoriteId = FavoriteId.NONE
 
     /// 播放顺序
     @Published private(set) var orderType = PlayerOrderType.LIST_LOOP
@@ -119,7 +119,7 @@ final class PlayerManager: ObservableObject {
 
     /// 恢复当前账号上次的播放列表,不自动播放
     func restore() {
-        let info = SettingShared.accountObjectName(PlayerManager._KEY_PLAYING_INFO).flatMap{ LocalObjectUtil.read(PlayingInfo.self, $0) } ?? PlayingInfo()
+        let info = SettingStore.accountObjectName(PlayerManager.KEY_PLAYING_INFO).flatMap{ LocalObjectUtil.read(PlayingInfo.self, $0) } ?? PlayingInfo()
         self.playList = info.playList
         self.index = info.playList.indices.contains(info.index) ? info.index : 0
         self.favoriteId = info.favoriteId
@@ -130,7 +130,7 @@ final class PlayerManager: ObservableObject {
 
     /// 保存播放信息
     func savePlayingInfo() {
-        guard let name = SettingShared.accountObjectName(PlayerManager._KEY_PLAYING_INFO) else{
+        guard let name = SettingStore.accountObjectName(PlayerManager.KEY_PLAYING_INFO) else{
             return
         }
         let info = PlayingInfo(playList: self.playList, index: self.index, favoriteId: self.favoriteId,
@@ -141,7 +141,7 @@ final class PlayerManager: ObservableObject {
     /*----------------------------------------------------------------------------------*/
 
     /// 播放一个列表
-    /// - Parameter favoriteId: 播放列表的来源,参考FavoriteType
+    /// - Parameter favoriteId: 播放列表的来源,参考FavoriteId
     func prepareAndPlay(_ list: [MusicModel], index: Int = 0, favoriteId: Int64) {
         guard list.indices.contains(index) else{
             return
@@ -266,8 +266,8 @@ final class PlayerManager: ObservableObject {
     }
 
     /// 切换当前歌曲但不播放音乐,视频页面切换下一个视频时使用
-    /// - Parameter addLate: 是否加入最近播放,定时停止时切换的歌曲还没有播放,不加入
-    func selectWithoutPlaying(_ index: Int, addLate: Bool = true) {
+    /// - Parameter addRecent: 是否加入最近播放,定时停止时切换的歌曲还没有播放,不加入
+    func selectWithoutPlaying(_ index: Int, addRecent: Bool = true) {
         guard self.playList.indices.contains(index) else{
             return
         }
@@ -277,8 +277,8 @@ final class PlayerManager: ObservableObject {
         self.progress.duration = Double(self.music?.duration ?? 0) / 1000
         if let music = self.music{
             self.updateArtwork(music)
-            if addLate{
-                MusicShared.addLate(music)
+            if addRecent{
+                MusicStore.addRecent(music)
             }
         }
         self.updateNowPlaying()
@@ -333,7 +333,7 @@ final class PlayerManager: ObservableObject {
         self.releasePlayer()
         self.playList = []
         self.index = 0
-        self.favoriteId = FavoriteType.NONE
+        self.favoriteId = FavoriteId.NONE
         self.progress.currentTime = 0
         self.progress.duration = 0
         self.savePlayingInfo()
@@ -471,7 +471,7 @@ final class PlayerManager: ObservableObject {
 
     /// 在线播放:按设置边播边缓存,或者直接在线播放
     private func startPlay(_ music: MusicModel, source: FileSource, startTime: Double) {
-        guard let url = SettingShared.musicCache ? FileSdkUtil.open(source) : URL(string: source.url) else{
+        guard let url = SettingStore.musicCache ? FileSdkUtil.open(source) : URL(string: source.url) else{
             self.onError("歌曲加载失败")
             return
         }
@@ -491,7 +491,7 @@ final class PlayerManager: ObservableObject {
         }
         AudioSessionUtil.exclusive()
         player.play()
-        MusicShared.addLate(music)
+        MusicStore.addRecent(music)
         self.savePlayingInfo()
         if isOnline{
             self.startTimeoutTask = Task{ @MainActor [weak self] in
@@ -660,7 +660,7 @@ final class PlayerManager: ObservableObject {
             self.seek(0)
             self.pause()
         } else {
-            self.selectWithoutPlaying(self.nextIndex, addLate: false)
+            self.selectWithoutPlaying(self.nextIndex, addRecent: false)
         }
     }
 

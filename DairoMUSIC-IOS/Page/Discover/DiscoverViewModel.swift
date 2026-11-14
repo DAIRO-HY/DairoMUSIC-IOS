@@ -11,10 +11,10 @@ import DairoUI_IOS
 class DiscoverViewModel: ObservableObject {
 
     /// 轮播的本地缓存名
-    private static let _KEY_SWIPER = "discover_swiper"
+    private static let KEY_SWIPER = "discover_swiper"
 
     /// 推荐歌单的本地缓存名
-    private static let _KEY_USEFUL = "discover_useful"
+    private static let KEY_USEFUL = "discover_useful"
 
     /// 轮播
     @Published var swiperList = [SwiperModel]()
@@ -28,13 +28,13 @@ class DiscoverViewModel: ObservableObject {
     init() {
 
         //先显示本地缓存,再从服务器更新
-        self.swiperList = SettingShared.accountObjectName(DiscoverViewModel._KEY_SWIPER).flatMap{ LocalObjectUtil.read([SwiperModel].self, $0) } ?? []
-        self.usefulList = SettingShared.accountObjectName(DiscoverViewModel._KEY_USEFUL).flatMap{ LocalObjectUtil.read([UsefulModel].self, $0) } ?? []
+        self.swiperList = SettingStore.accountObjectName(DiscoverViewModel.KEY_SWIPER).flatMap{ LocalObjectUtil.read([SwiperModel].self, $0) } ?? []
+        self.usefulList = SettingStore.accountObjectName(DiscoverViewModel.KEY_USEFUL).flatMap{ LocalObjectUtil.read([UsefulModel].self, $0) } ?? []
         self.loadData()
 
         //进入首页时在后台刷新我的歌单,其他页面用到时已经是最新的
-        FavoriteShared.loadInBackground()
-        MusicShared.loadInBackground()
+        FavoriteStore.loadInBackground()
+        MusicStore.loadInBackground()
     }
 
     /// 从服务器加载数据
@@ -44,13 +44,13 @@ class DiscoverViewModel: ObservableObject {
         ServerConfig.shared.load()
         HomeApi.swiper().hide().send{
             self.swiperList = $0
-            if let name = SettingShared.accountObjectName(DiscoverViewModel._KEY_SWIPER){
+            if let name = SettingStore.accountObjectName(DiscoverViewModel.KEY_SWIPER){
                 _ = LocalObjectUtil.write($0, name)
             }
         }
         HomeApi.useful().hide().send{
             self.usefulList = $0
-            if let name = SettingShared.accountObjectName(DiscoverViewModel._KEY_USEFUL){
+            if let name = SettingStore.accountObjectName(DiscoverViewModel.KEY_USEFUL){
                 _ = LocalObjectUtil.write($0, name)
             }
         }
@@ -77,7 +77,7 @@ class DiscoverViewModel: ObservableObject {
                 return
             }
             MusicApi.detail(id: id).send{
-                PlayerManager.shared.prepareAndPlay([$0], favoriteId: FavoriteType.NONE)
+                PlayerManager.shared.prepareAndPlay([$0], favoriteId: FavoriteId.NONE)
             }
         case 3://拨打电话
             if let url = URL(string: "tel://" + data){

@@ -11,7 +11,7 @@ import DairoUI_IOS
 class SearchViewModel: ObservableObject {
 
     /// 搜索历史的本地缓存名
-    private static let _KEY_HISTORY = "search_history"
+    private static let KEY_HISTORY = "search_history"
 
     /// 最多保存的搜索历史数
     private static let MAX_HISTORY_COUNT = 20
@@ -38,7 +38,7 @@ class SearchViewModel: ObservableObject {
     private var requests = [ApiHttpBase]()
 
     init() {
-        self.history = SettingShared.accountObjectName(SearchViewModel._KEY_HISTORY).flatMap{ LocalObjectUtil.read([String].self, $0) } ?? []
+        self.history = SettingStore.accountObjectName(SearchViewModel.KEY_HISTORY).flatMap{ LocalObjectUtil.read([String].self, $0) } ?? []
     }
 
     /// 搜索,曲库和采集平台同时搜索,曲库的结果先显示
@@ -81,7 +81,7 @@ class SearchViewModel: ObservableObject {
 
     /// 播放搜索结果
     func play(_ list: [MusicModel], index: Int){
-        PlayerManager.shared.prepareAndPlay(list, index: index, favoriteId: FavoriteType.SEARCH)
+        PlayerManager.shared.prepareAndPlay(list, index: index, favoriteId: FavoriteId.SEARCH)
     }
 
     /// 添加到搜索历史
@@ -101,7 +101,7 @@ class SearchViewModel: ObservableObject {
     }
 
     private func saveHistory(){
-        if let name = SettingShared.accountObjectName(SearchViewModel._KEY_HISTORY){
+        if let name = SettingStore.accountObjectName(SearchViewModel.KEY_HISTORY){
             _ = LocalObjectUtil.write(self.history, name)
         }
     }

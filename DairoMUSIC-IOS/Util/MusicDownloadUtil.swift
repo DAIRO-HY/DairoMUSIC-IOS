@@ -26,7 +26,7 @@ enum MusicDownloadUtil {
     static let QUALITIES = [
         DownloadQuality(label: "标准(128K)", bitRate: 128),
         DownloadQuality(label: "超高品质(320K)", bitRate: 320),
-        DownloadQuality(label: "无损", bitRate: SettingShared.BIT_RATE_LOSSLESS)
+        DownloadQuality(label: "无损", bitRate: SettingStore.BIT_RATE_LOSSLESS)
     ]
 
     /// 一首歌可以下载的音质,列出这首歌所有音质的文件和大小;还没有入库的采集平台歌曲不知道有哪些音质,显示通用的选项
@@ -62,7 +62,7 @@ enum MusicDownloadUtil {
             MusicDownloadUtil.add(music, quality: quality)
             return
         }
-        MusicShared.ensureId(music){ musicId in
+        MusicStore.ensureId(music){ musicId in
             MusicApi.detail(id: musicId).send{ detail in
                 MusicDownloadUtil.add(detail, quality: quality)
             }

@@ -202,7 +202,7 @@ enum FileSdkUtil {
      视频清晰度的名称,文件名里用来区分清晰度
      */
     static func videoQualityText(_ quality: Int) -> String {
-        return quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
+        return quality == SettingStore.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
     }
 
     /**
@@ -251,7 +251,7 @@ enum FileSdkUtil {
         guard let sdk = try? FileSdkUtil.get() else{
             return []
         }
-        let serverId = SettingShared.serverId
+        let serverId = SettingStore.serverId
         var result = [CacheInfo]()
         var offset: UInt64 = 0
         let limit: UInt64 = 500
@@ -364,14 +364,14 @@ enum FileSdkUtil {
         let sdk = try FileSdk(config: SdkConfig(rootDir: root.path))
 
         //SDK不负责保存设置,启动时再设置一次
-        if SettingShared.fileSdkMaxCachingCount > 0{
-            sdk.setMaxCachingCount(count: UInt32(SettingShared.fileSdkMaxCachingCount))
+        if SettingStore.fileSdkMaxCachingCount > 0{
+            sdk.setMaxCachingCount(count: UInt32(SettingStore.fileSdkMaxCachingCount))
         }
-        if let days = SettingShared.fileSdkCacheExpireDays{
+        if let days = SettingStore.fileSdkCacheExpireDays{
             sdk.setCacheExpireDays(days: UInt32(days))
         }
-        if SettingShared.fileSdkMaxCacheSize > 0{
-            sdk.setMaxCacheSize(size: UInt64(SettingShared.fileSdkMaxCacheSize) * 1024 * 1024)
+        if SettingStore.fileSdkMaxCacheSize > 0{
+            sdk.setMaxCacheSize(size: UInt64(SettingStore.fileSdkMaxCacheSize) * 1024 * 1024)
         }
         return sdk
     }
@@ -397,7 +397,7 @@ struct FileSource {
             return nil
         }
         let displayName = "\(music.nameText) - \(music.artistText) [\(MusicModel.qualityText(file.bitRate))].\(file.format)"
-        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingStore.serverId,
                                                      cacheKey: FileSdkUtil.musicKeyPrefix(music.id) + "\(file.id)", name: displayName,
                                                      md5: file.md5, thumb: music.logo),
                           ext: file.format)
@@ -411,7 +411,7 @@ struct FileSource {
         }
         let name = music.name ?? "\(music.id)"
         let ext = URL(string: url)?.pathExtension.lowercased() ?? ""
-        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingShared.serverId,
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_MUSIC, namespace: SettingStore.serverId,
                                                      cacheKey: "/collect/\(collect.platform)/\(collect.extra)",
                                                      name: ext.isEmpty ? name : "\(name).\(ext)"), ext: ext)
     }
@@ -421,7 +421,7 @@ struct FileSource {
         guard let url = file.url, !url.isEmpty else{
             return nil
         }
-        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_VIDEO, namespace: SettingShared.serverId,
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_VIDEO, namespace: SettingStore.serverId,
                                                      cacheKey: FileSdkUtil.videoKeyPrefix(music.id) + "\(file.id)",
                                                      name: "\(music.nameText) - \(music.artistText) [\(FileSdkUtil.videoQualityText(file.quality))].mp4",
                                                      md5: file.md5, thumb: music.logo),
@@ -440,7 +440,7 @@ struct FileSource {
         guard let collect = music.collect, let url = collect.videoUrl, !url.isEmpty else{
             return nil
         }
-        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_VIDEO, namespace: SettingShared.serverId,
+        return FileSource(url: url, options: Options(group: FileSdkUtil.GROUP_VIDEO, namespace: SettingStore.serverId,
                                                      cacheKey: "/collect-video/\(collect.platform)/\(collect.extra)",
                                                      name: "\(music.nameText) - \(music.artistText) [原画].mp4", thumb: music.logo), ext: "mp4")
     }

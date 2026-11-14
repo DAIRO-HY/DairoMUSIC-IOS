@@ -1,5 +1,5 @@
 //
-//  LoggedViewModel.swift
+//  AccountListViewModel.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/07.
@@ -8,17 +8,17 @@
 import SwiftUI
 import DairoUI_IOS
 
-class LoggedViewModel: ObservableObject {
+class AccountListViewModel: ObservableObject {
 
     /// 记录当前要操作的索引
     var actionIndex = -1
 
     /// 当前已登录的账号列表
-    @Published var loggedUserList = [AccountInfo]()
+    @Published var accountList = [AccountInfo]()
 
     /// 获取当前操作的账号
     var actionItem: AccountInfo{
-        return self.loggedUserList[self.actionIndex]
+        return self.accountList[self.actionIndex]
     }
 
     init() {
@@ -27,13 +27,13 @@ class LoggedViewModel: ObservableObject {
 
     /// 加载数据
     func loadData(){
-        self.loggedUserList = SettingShared.loggedUserList
+        self.accountList = SettingStore.accountList
     }
 
     /// 删除账号点击事件
     func onDeleteClick(){
         let actionItem = self.actionItem
-        self.loggedUserList.removeAll{ $0.isSame(actionItem) }
-        SettingShared.loggedUserList = self.loggedUserList
+        self.accountList.removeAll{ $0.isSame(actionItem) }
+        SettingStore.accountList = self.accountList
     }
 }

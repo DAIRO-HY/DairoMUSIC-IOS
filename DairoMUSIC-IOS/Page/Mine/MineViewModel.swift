@@ -11,16 +11,16 @@ import DairoUI_IOS
 class MineViewModel: ObservableObject {
 
     /// 当前登录的账号信息
-    @Published var logged: AccountInfo?
+    @Published var account: AccountInfo?
 
     /// 当前登录的会员信息
-    @Published var user = SettingShared.user
+    @Published var user = SettingStore.user
 
     /// 目标音质
-    @Published var bitRate = SettingShared.bitRate
+    @Published var bitRate = SettingStore.bitRate
 
     init() {
-        self.logged = SettingShared.loggedUser
+        self.account = SettingStore.currentAccount
     }
 
     /// 显示的名字
@@ -28,25 +28,25 @@ class MineViewModel: ObservableObject {
         if let nick = self.user?.nick, !nick.isEmpty{
             return nick
         }
-        return self.logged?.name ?? ""
+        return self.account?.name ?? ""
     }
 
     /// 刷新会员信息,昵称和头像可能在其他设备上修改过
     func loadUser(){
-        self.user = SettingShared.user
-        SettingShared.loadUserInBackground{
+        self.user = SettingStore.user
+        SettingStore.loadUserInBackground{
             self.user = $0
-            self.logged = SettingShared.loggedUser
+            self.account = SettingStore.currentAccount
         }
     }
 
     /// 修改播放音质,歌曲里有所有音质的文件,每首歌开始播放前按设置选择,不用重新获取歌单
     func onBitRateChange(_ bitRate: Int) -> Bool{
-        if bitRate > SettingShared.BIT_RATE_STANDARD && ServerConfig.shared.isVipLimited{
+        if bitRate > SettingStore.BIT_RATE_STANDARD && ServerConfig.shared.isVipLimited{
             Toast.show("超高品质、无损音质需要VIP")
             return false
         }
-        SettingShared.bitRate = bitRate
+        SettingStore.bitRate = bitRate
         return true
     }
 
@@ -55,7 +55,7 @@ class MineViewModel: ObservableObject {
 
         //让服务端删除这个票据
         UserApi.logout().hide().send{}
-        SettingShared.logout()
+        SettingStore.logout()
         ServerPage().relaunch()
     }
 }

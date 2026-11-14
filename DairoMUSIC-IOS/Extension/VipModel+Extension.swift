@@ -1,5 +1,5 @@
 //
-//  VipModel++.swift
+//  VipModel+Extension.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/14.

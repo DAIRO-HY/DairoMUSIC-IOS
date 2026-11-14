@@ -49,7 +49,7 @@ class LrcViewModel: ObservableObject {
             return
         }
         self.tip = "歌词加载中"
-        let cacheName = SettingShared.accountObjectName("lrc_\(music.id)")
+        let cacheName = SettingStore.accountObjectName("lrc_\(music.id)")
         if let lrc = cacheName.flatMap({ LocalObjectUtil.read(String.self, $0) }){
             self.show(lrc)
             return

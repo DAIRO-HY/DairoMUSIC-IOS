@@ -176,7 +176,7 @@ class ApiHttp<T: Codable> : ApiHttpBase{
      */
     private func request(_ successFunc: @escaping((_ data: T) -> Void)) {
         let parameterStr = self.parameterStr
-        var urlStr = (self.domain ?? SettingShared.domainNotNull) + self.url
+        var urlStr = (self.domain ?? SettingStore.domainNotNull) + self.url
         if self.method == "GET" && !parameterStr.isEmpty{
             urlStr += "?" + parameterStr
         }
@@ -188,7 +188,7 @@ class ApiHttp<T: Codable> : ApiHttpBase{
         request.httpMethod = self.method//请求方式
         request.timeoutInterval = 15 // 设置超时(秒)
         if self.isAuth{
-            request.setValue("Bearer " + SettingShared.token, forHTTPHeaderField: "Authorization")
+            request.setValue("Bearer " + SettingStore.token, forHTTPHeaderField: "Authorization")
         }
         if let uploadFile = self.uploadFile{
             let boundary = UUID().uuidString
@@ -269,9 +269,9 @@ class ApiHttp<T: Codable> : ApiHttpBase{
             successFunc(t)
             return
         }
-        if response.statusCode == 401 && self.isAuth && SettingShared.isLogin{
+        if response.statusCode == 401 && self.isAuth && SettingStore.isLogin{
             Toast.show("登录已失效,请重新登录")
-            SettingShared.toLoginPage()
+            SettingStore.toLoginPage()
             return
         }
         self.callFail(self.makeFailModel(response.statusCode, data))

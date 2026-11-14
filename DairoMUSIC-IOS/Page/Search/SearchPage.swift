@@ -149,7 +149,7 @@ struct SearchPage: View {
 
     /// 是否正在播放的歌曲
     private func isPlaying(_ music: MusicModel) -> Bool {
-        guard self.player.favoriteId == FavoriteType.SEARCH, let playing = self.player.music else{
+        guard self.player.favoriteId == FavoriteId.SEARCH, let playing = self.player.music else{
             return false
         }
         return playing.isSameMusic(music)

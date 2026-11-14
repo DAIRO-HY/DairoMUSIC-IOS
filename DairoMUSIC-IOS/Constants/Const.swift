@@ -22,7 +22,7 @@ enum Const {
     private static var mDeviceId: String?
 
     ///设备唯一标识,免注册使用时用来找回同一个临时会员
-    ///保存在钥匙串里,卸载重装之后不变;第一次生成时沿用以前用identifierForVendor生成的标识,升级之前的临时会员也能找回
+    ///第一次使用时随机生成,保存在钥匙串里,卸载重装之后不变
     static var deviceId: String {
         if let deviceId = Const.mDeviceId{
             return deviceId
@@ -31,7 +31,7 @@ enum Const {
             Const.mDeviceId = deviceId
             return deviceId
         }
-        let deviceId = (UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString).md5
+        let deviceId = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
         KeychainUtil.write(deviceId, Const.KEY_DEVICE_ID)
         Const.mDeviceId = deviceId
         return deviceId

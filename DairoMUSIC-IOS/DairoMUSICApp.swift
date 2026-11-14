@@ -1,5 +1,5 @@
 //
-//  DairoMusicApp.swift
+//  DairoMUSICApp.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/07.
@@ -9,7 +9,7 @@ import SwiftUI
 import DairoUI_IOS
 
 @main
-struct DairoMusicApp: App {
+struct DairoMUSICApp: App {
 
     //视频全屏时允许横屏
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -20,7 +20,7 @@ struct DairoMusicApp: App {
     init(){
 
         //卸载重装之后删除钥匙串里留下的登录票据,必须在读取票据之前
-        SettingShared.initKeychain()
+        SettingStore.initKeychain()
 
         //提前创建SDK实例
         _ = try? FileSdkUtil.get()
@@ -38,7 +38,7 @@ struct DairoMusicApp: App {
     var body: some Scene {
         WindowGroup {
             RootView{
-                if SettingShared.isLogin{
+                if SettingStore.isLogin{
                     DiscoverPage()
                 }else{
                     ServerPage()
@@ -52,8 +52,8 @@ struct DairoMusicApp: App {
                 ServerConfig.shared.load()
 
                 //VIP状态可能变化了(到期、兑换、后台修改)
-                if SettingShared.isLogin{
-                    SettingShared.loadUserInBackground(silent: true)
+                if SettingStore.isLogin{
+                    SettingStore.loadUserInBackground(silent: true)
                 }
             case .background:
                 PlayerManager.shared.savePlayingInfo()

@@ -18,9 +18,9 @@ struct MinePage: View {
     private var bitRateData: [SettingPickerData<Int>] {
         let vip = self.config.isVipLimited ? "(VIP)" : ""
         return [
-            SettingPickerData("标准(128K)",SettingShared.BIT_RATE_STANDARD),
+            SettingPickerData("标准(128K)",SettingStore.BIT_RATE_STANDARD),
             SettingPickerData("超高品质(320K)" + vip,320),
-            SettingPickerData("无损" + vip,SettingShared.BIT_RATE_LOSSLESS)
+            SettingPickerData("无损" + vip,SettingStore.BIT_RATE_LOSSLESS)
         ]
     }
 
@@ -30,7 +30,7 @@ struct MinePage: View {
     //视图模型
     @StateObject private var vm = MineViewModel()
 
-    //主题设置值
+    //主题设置值,DairoUI_IOS的RootView按这个名字读取,不能改
     @AppStorage("theme") private var theme = 0
 
     /// 定时停止播放
@@ -53,7 +53,7 @@ struct MinePage: View {
 
                     //账号信息占满整个顶部,包括状态栏,没有圆角和左右边距;背景往上延伸到状态栏,下拉时也不露出底色
                     SettingCustomView{
-                        NavigationLink(destination: LoggedPage()){
+                        NavigationLink(destination: AccountListPage()){
                             self.topLogoView
                         }
                         .buttonStyle(.row)
@@ -188,7 +188,7 @@ struct MinePage: View {
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.secondary, lineWidth: 0.5))
                     }
                 }
-                Text(self.vm.logged?.domain ?? "")
+                Text(self.vm.account?.domain ?? "")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }

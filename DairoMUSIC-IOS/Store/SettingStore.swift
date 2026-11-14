@@ -1,5 +1,5 @@
 //
-//  SettingShared.swift
+//  SettingStore.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/07.
@@ -9,31 +9,31 @@ import Foundation
 import DairoUI_IOS
 
 /// 用户设置
-enum SettingShared {
+enum SettingStore {
     /*----------------------------------------------------------------------------------*/
 
     /// 会员信息
-    private static let _KEY_USER = "USER"
+    private static let KEY_USER = "user"
 
     /// 会员信息
     static var user: UserModel?{
         get{
-            return LocalObjectUtil.read(UserModel.self, SettingShared._KEY_USER)
+            return LocalObjectUtil.read(UserModel.self, SettingStore.KEY_USER)
         }
 
         set{
-            _ = LocalObjectUtil.write(newValue, SettingShared._KEY_USER)
+            _ = LocalObjectUtil.write(newValue, SettingStore.KEY_USER)
             ServerConfig.shared.updateVip(newValue?.vip)
         }
     }
 
     /// 更新本地保存的VIP状态(兑换VIP之后)
-    static func updateVip(_ vip: VipModel?) {
-        guard var user = SettingShared.user else{
+    static func updateVip(_ vip: VipModel) {
+        guard var user = SettingStore.user else{
             return
         }
         user.vip = vip
-        SettingShared.user = user
+        SettingStore.user = user
     }
 
     /// 后台刷新会员信息,不弹出加载等待框
@@ -44,8 +44,8 @@ enum SettingShared {
             request = request.fail{ _ in }.error{ _ in }
         }
         request.send{
-            SettingShared.user = $0
-            SettingShared.updateLoggedUser($0)
+            SettingStore.user = $0
+            SettingStore.updateCurrentAccount($0)
             success($0)
         }
     }
@@ -58,11 +58,11 @@ enum SettingShared {
     /// 卸载重装之后,删除钥匙串里上次安装时留下的登录票据(钥匙串里的数据卸载之后依然保留),设备标识保留
     /// 必须在读取登录票据之前调用
     static func initKeychain() {
-        if UserDefaults.standard.bool(forKey: SettingShared.KEY_KEYCHAIN_INIT){
+        if UserDefaults.standard.bool(forKey: SettingStore.KEY_KEYCHAIN_INIT){
             return
         }
         KeychainUtil.deleteAll(except: [Const.KEY_DEVICE_ID])
-        UserDefaults.standard.set(true, forKey: SettingShared.KEY_KEYCHAIN_INIT)
+        UserDefaults.standard.set(true, forKey: SettingStore.KEY_KEYCHAIN_INIT)
     }
 
     /// 登录Token
@@ -72,55 +72,48 @@ enum SettingShared {
     /// 登录Token,保存在钥匙串里
     static var token: String {
         get{
-            if let token = SettingShared.mToken{
+            if let token = SettingStore.mToken{
                 return token
             }
-
-            //老版本保存在UserDefaults里,移到钥匙串
-            if let token = UserDefaults.standard.string(forKey: SettingShared.KEY_TOKEN){
-                SettingShared.token = token
-                UserDefaults.standard.removeObject(forKey: SettingShared.KEY_TOKEN)
-                return token
-            }
-            let token = KeychainUtil.read(SettingShared.KEY_TOKEN) ?? ""
-            SettingShared.mToken = token
+            let token = KeychainUtil.read(SettingStore.KEY_TOKEN) ?? ""
+            SettingStore.mToken = token
             return token
         }
         set{
-            SettingShared.mToken = newValue
+            SettingStore.mToken = newValue
             if newValue.isEmpty {
-                KeychainUtil.delete(SettingShared.KEY_TOKEN)
+                KeychainUtil.delete(SettingStore.KEY_TOKEN)
                 return
             }
-            KeychainUtil.write(newValue, SettingShared.KEY_TOKEN)
+            KeychainUtil.write(newValue, SettingStore.KEY_TOKEN)
         }
     }
 
     /*----------------------------------------------------------------------------------*/
 
     /// 当前服务器地址
-    private static let _DOMAIN = "DOMAIN";
-    private static var _domain: String?
+    private static let KEY_DOMAIN = "DOMAIN";
+    private static var mDomain: String?
 
     static var domainNotNull: String{
-        return SettingShared.domain ?? ""
+        return SettingStore.domain ?? ""
     }
 
     static var domain: String?{
         get {
-            if SettingShared._domain == nil{
-                SettingShared._domain = UserDefaults.standard.string(forKey: SettingShared._DOMAIN)
+            if SettingStore.mDomain == nil{
+                SettingStore.mDomain = UserDefaults.standard.string(forKey: SettingStore.KEY_DOMAIN)
             }
-            return SettingShared._domain;
+            return SettingStore.mDomain;
         }
 
         set{
-            SettingShared._domain = newValue;
+            SettingStore.mDomain = newValue;
             if newValue == nil {
-                UserDefaults.standard.removeObject(forKey: SettingShared._DOMAIN)
+                UserDefaults.standard.removeObject(forKey: SettingStore.KEY_DOMAIN)
                 return;
             }
-            UserDefaults.standard.set(newValue, forKey: SettingShared._DOMAIN)
+            UserDefaults.standard.set(newValue, forKey: SettingStore.KEY_DOMAIN)
         }
     }
 
@@ -139,31 +132,28 @@ enum SettingShared {
 
     /*----------------------------------------------------------------------------------*/
 
-    private static var mLoggedUserList: [AccountInfo]?
+    /// 登录过的账号列表的文件名
+    private static let KEY_ACCOUNT_LIST = "account_list"
+
+    private static var mAccountList: [AccountInfo]?
 
     /// 登录过的账号列表,每个账号的登录票据保存在钥匙串里,不保存到文件
-    static var loggedUserList: [AccountInfo]{
+    static var accountList: [AccountInfo]{
         get{
-            if let list = SettingShared.mLoggedUserList{
+            if let list = SettingStore.mAccountList{
                 return list
             }
-            var list = LocalObjectUtil.read([AccountInfo].self, "loggedUserList") ?? [AccountInfo]()
-
-            //老版本的票据保存在文件里,读出来之后移到钥匙串
-            let hasFileToken = list.contains{ !$0.token.isEmpty }
-            for i in list.indices where list[i].token.isEmpty{
+            var list = LocalObjectUtil.read([AccountInfo].self, SettingStore.KEY_ACCOUNT_LIST) ?? [AccountInfo]()
+            for i in list.indices{
                 list[i].token = KeychainUtil.read(list[i].tokenKey) ?? ""
             }
-            SettingShared.mLoggedUserList = list
-            if hasFileToken{
-                SettingShared.loggedUserList = list
-            }
+            SettingStore.mAccountList = list
             return list
         }
 
         set{
             //删除已经不在列表里的账号的票据
-            for old in SettingShared.loggedUserList where !newValue.contains(where: { $0.isSame(old) }){
+            for old in SettingStore.accountList where !newValue.contains(where: { $0.isSame(old) }){
                 KeychainUtil.delete(old.tokenKey)
             }
             for account in newValue{
@@ -173,22 +163,22 @@ enum SettingShared {
                     KeychainUtil.write(account.token, account.tokenKey)
                 }
             }
-            SettingShared.mLoggedUserList = newValue
-            _ = LocalObjectUtil.write(newValue, "loggedUserList")
+            SettingStore.mAccountList = newValue
+            _ = LocalObjectUtil.write(newValue, SettingStore.KEY_ACCOUNT_LIST)
         }
     }
 
     /// 当前登录的账号
-    static var loggedUser: AccountInfo? {
-        return SettingShared.loggedUserList.first{ $0.isLogining }
+    static var currentAccount: AccountInfo? {
+        return SettingStore.accountList.first{ $0.isCurrent }
     }
 
     /// 是否登录
-    static var isLogin: Bool{ !SettingShared.token.isEmpty && !SettingShared.serverId.isEmpty }
+    static var isLogin: Bool{ !SettingStore.token.isEmpty && !SettingStore.serverId.isEmpty }
 
     /// 获取当前账号的本地对象缓存名,不同账号的缓存互相隔离,没有登录时返回nil,此时不使用缓存
     static func accountObjectName(_ name: String) -> String? {
-        guard SettingShared.isLogin, let account = SettingShared.loggedUser else{
+        guard SettingStore.isLogin, let account = SettingStore.currentAccount else{
             return nil
         }
         let folder = "account_cache/\(account.serverId)_\(account.userId)"
@@ -199,23 +189,23 @@ enum SettingShared {
     /// 退出登录
     static func logout() {
         PlayerManager.shared.stop()
-        var logined = SettingShared.loggedUserList
-        for i in 0 ..< logined.count{
-            if logined[i].isLogining{
-                logined[i].token = ""
+        var list = SettingStore.accountList
+        for i in 0 ..< list.count{
+            if list[i].isCurrent{
+                list[i].token = ""
             }
-            logined[i].isLogining = false
+            list[i].isCurrent = false
         }
-        SettingShared.loggedUserList = logined
-        SettingShared.token = ""
-        SettingShared.user = nil
-        SettingShared.onAccountChange()
+        SettingStore.accountList = list
+        SettingStore.token = ""
+        SettingStore.user = nil
+        SettingStore.onAccountChange()
     }
 
     /// 退出登录,并跳转到登录页面,自动填写当前账号的信息
     static func toLoginPage() {
-        let account = SettingShared.loggedUser
-        SettingShared.logout()
+        let account = SettingStore.currentAccount
+        SettingStore.logout()
         if let account{
             LoginPage(LoginViewModel(domain: account.domain, account: account.account)).relaunch()
         } else {
@@ -235,29 +225,29 @@ enum SettingShared {
     /// - Parameter editIndex: 编辑账号时,账号在已登录列表里的序号,登录成功之后替换这个账号
     /// - Parameter request: 登录请求
     static func login(domain: String, editIndex: Int? = nil, request: @escaping () -> ApiHttp<LoginModel>, success: @escaping () -> Void) {
-        SettingShared.checkServer(domain: domain){ config in
+        SettingStore.checkServer(domain: domain){ config in
             request().domain(domain).fail{
                 Toast.show($0.msg ?? "登录失败")
             }.send{ loginInfo in//登录成功
                 PlayerManager.shared.stop()
                 let user = loginInfo.user
-                let account = AccountInfo(domain: domain, serverId: config.serverId, userId: user.id, account: SettingShared.loginAccount(user),
-                                          name: SettingShared.accountName(user), token: loginInfo.token, isLogining: true)
-                SettingShared.loggedUserList = SettingShared.addLoggedUser(account, editIndex: editIndex)
-                SettingShared.domain = domain
-                SettingShared.serverId = config.serverId
-                SettingShared.token = loginInfo.token
-                SettingShared.user = user
-                SettingShared.onAccountChange()
+                let account = AccountInfo(domain: domain, serverId: config.serverId, userId: user.id, account: SettingStore.loginAccount(user),
+                                          name: SettingStore.accountName(user), token: loginInfo.token, isCurrent: true)
+                SettingStore.accountList = SettingStore.addAccount(account, editIndex: editIndex)
+                SettingStore.domain = domain
+                SettingStore.serverId = config.serverId
+                SettingStore.token = loginInfo.token
+                SettingStore.user = user
+                SettingStore.onAccountChange()
                 success()
             }
         }
     }
 
     /// 将登录成功的账号保存到已登录列表,同一个服务器的同一个会员只保留一条,编辑时保持账号原来的位置
-    private static func addLoggedUser(_ account: AccountInfo, editIndex: Int?) -> [AccountInfo] {
-        var list = SettingShared.loggedUserList
-        list.indices.forEach{ list[$0].isLogining = false }
+    private static func addAccount(_ account: AccountInfo, editIndex: Int?) -> [AccountInfo] {
+        var list = SettingStore.accountList
+        list.indices.forEach{ list[$0].isCurrent = false }
         guard let editIndex, list.indices.contains(editIndex) else{
             list.removeAll{ $0.isSame(account) }
             list.append(account)
@@ -269,45 +259,45 @@ enum SettingShared {
 
     /// 切换到已经登录过的账号,票据失效时会跳转到登录页面
     static func switchAccount(_ account: AccountInfo, success: @escaping () -> Void) {
-        let oldDomain = SettingShared.domain
-        let oldToken = SettingShared.token
-        let oldServerId = SettingShared.serverId
-        let oldLoggedUserList = SettingShared.loggedUserList
+        let oldDomain = SettingStore.domain
+        let oldToken = SettingStore.token
+        let oldServerId = SettingStore.serverId
+        let oldAccountList = SettingStore.accountList
         let onFail = { (msg: String) in
-            SettingShared.domain = oldDomain
-            SettingShared.loggedUserList = oldLoggedUserList
-            SettingShared.serverId = oldServerId
-            SettingShared.token = oldToken
+            SettingStore.domain = oldDomain
+            SettingStore.accountList = oldAccountList
+            SettingStore.serverId = oldServerId
+            SettingStore.token = oldToken
             Toast.show(msg)
         }
-        var loggedUserList = oldLoggedUserList
-        loggedUserList.indices.forEach{
-            loggedUserList[$0].isLogining = loggedUserList[$0].isSame(account)
+        var accountList = oldAccountList
+        accountList.indices.forEach{
+            accountList[$0].isCurrent = accountList[$0].isSame(account)
         }
-        SettingShared.domain = account.domain
-        SettingShared.loggedUserList = loggedUserList
-        SettingShared.serverId = account.serverId
-        SettingShared.token = account.token
+        SettingStore.domain = account.domain
+        SettingStore.accountList = accountList
+        SettingStore.serverId = account.serverId
+        SettingStore.token = account.token
         UserApi.info().error(block: onFail).fail{
             onFail($0.msg ?? "切换账号失败")
         }.send{
             PlayerManager.shared.stop()
-            SettingShared.user = $0
-            SettingShared.updateLoggedUser($0)
-            SettingShared.onAccountChange()
+            SettingStore.user = $0
+            SettingStore.updateCurrentAccount($0)
+            SettingStore.onAccountChange()
             success()
         }
     }
 
     /// 会员信息变化之后,更新已登录列表里显示的名字,绑定邮箱之后也会更新登录账号
-    private static func updateLoggedUser(_ user: UserModel) {
-        var list = SettingShared.loggedUserList
-        guard let index = list.firstIndex(where: { $0.isLogining }) else{
+    private static func updateCurrentAccount(_ user: UserModel) {
+        var list = SettingStore.accountList
+        guard let index = list.firstIndex(where: { $0.isCurrent }) else{
             return
         }
-        list[index].account = SettingShared.loginAccount(user)
-        list[index].name = SettingShared.accountName(user)
-        SettingShared.loggedUserList = list
+        list[index].account = SettingStore.loginAccount(user)
+        list[index].name = SettingStore.accountName(user)
+        SettingStore.accountList = list
     }
 
     /// 登录账号,有邮箱时用邮箱,没有邮箱时用用户名,临时会员为空
@@ -320,7 +310,7 @@ enum SettingShared {
 
     /// 账号显示的名字,有登录账号时显示登录账号,临时会员显示昵称
     private static func accountName(_ user: UserModel) -> String {
-        let account = SettingShared.loginAccount(user)
+        let account = SettingStore.loginAccount(user)
         if !account.isEmpty{
             return account
         }
@@ -329,8 +319,8 @@ enum SettingShared {
 
     /// 账号变化之后,清空内存里上一个账号的数据,加载新账号的播放列表
     private static func onAccountChange() {
-        FavoriteShared.clearMemory()
-        MusicShared.clearMemory()
+        FavoriteStore.clearMemory()
+        MusicStore.clearMemory()
         PlayerManager.shared.restore()
 
         //提交新账号上次没有提交成功的播放记录
@@ -368,7 +358,7 @@ enum SettingShared {
     static var videoQuality: Int{
         get{
             let value = UserDefaults.standard.integer(forKey: "VIDEO_QUALITY")
-            return value == 0 ? SettingShared.VIDEO_QUALITY_SMOOTH : value
+            return value == 0 ? SettingStore.VIDEO_QUALITY_SMOOTH : value
         }
         set{
             UserDefaults.standard.set(newValue, forKey: "VIDEO_QUALITY")
@@ -386,7 +376,7 @@ enum SettingShared {
 
     /// 音乐是否边播边缓存,默认开启;关闭时没有缓存的歌曲直接在线播放
     static var musicCache: Bool{
-        return UserDefaults.standard.object(forKey: SettingShared.KEY_MUSIC_CACHE) as? Bool ?? true
+        return UserDefaults.standard.object(forKey: SettingStore.KEY_MUSIC_CACHE) as? Bool ?? true
     }
 
     /// 视频边播边缓存的设置名,页面上用AppStorage绑定
@@ -394,7 +384,7 @@ enum SettingShared {
 
     /// 视频是否边播边缓存,默认在线播放
     static var videoCache: Bool{
-        return UserDefaults.standard.bool(forKey: SettingShared.KEY_VIDEO_CACHE)
+        return UserDefaults.standard.bool(forKey: SettingStore.KEY_VIDEO_CACHE)
     }
 
     /*----------------------------------------------------------------------------------*/

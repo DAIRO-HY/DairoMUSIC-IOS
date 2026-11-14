@@ -14,8 +14,8 @@ struct PlayingInfo: Codable {
     /// 当前播放的序号
     var index = 0
 
-    /// 播放列表的来源,参考FavoriteType
-    var favoriteId = FavoriteType.NONE
+    /// 播放列表的来源,参考FavoriteId
+    var favoriteId = FavoriteId.NONE
 
     /// 当前播放位置(秒)
     var currentTime = 0.0

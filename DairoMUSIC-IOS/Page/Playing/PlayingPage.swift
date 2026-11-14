@@ -50,7 +50,7 @@ struct PlayingPage: View {
     @State private var infoMusic: MusicModel?
 
     /// 第一次进入播放页时提示左边是视频、右边是歌词
-    @State private var showGuide = !SettingShared.playingGuideShown
+    @State private var showGuide = !SettingStore.playingGuideShown
 
     /// 显示取消离线模式的确认框
     @State private var showOfflineAlert = false
@@ -132,7 +132,7 @@ struct PlayingPage: View {
                 .transition(.opacity)
                 .zIndex(2)
                 .onAppear{
-                    SettingShared.playingGuideShown = true
+                    SettingStore.playingGuideShown = true
                 }
             }
         }
@@ -292,7 +292,7 @@ struct PlayingPage: View {
             let isLike = self.isLike
             Button(action: {
                 if let music = self.player.music{
-                    MusicShared.toggleLike(music)
+                    MusicStore.toggleLike(music)
                 }
             }){
                 Image(systemName: isLike ? "heart.fill" : "heart")
@@ -319,7 +319,7 @@ struct PlayingPage: View {
         guard let music = self.player.music, music.id != 0 else{
             return false
         }
-        return MusicShared.isLike(music.id)
+        return MusicStore.isLike(music.id)
     }
 
     /// 播放控制

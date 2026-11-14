@@ -27,12 +27,12 @@ class LoginViewModel: ObservableObject {
     @Published var showLogin = false
 
     //编辑模式时,当前账号所在的索引
-    var editLoggedIndex: Int?
+    var editAccountIndex: Int?
 
-    init(domain: String = "", account: String = "", editLoggedIndex: Int? = nil) {
+    init(domain: String = "", account: String = "", editAccountIndex: Int? = nil) {
         self.domain = domain
         self.account = account
-        self.editLoggedIndex = editLoggedIndex
+        self.editAccountIndex = editAccountIndex
     }
 
     /// 服务器页面下一步点击事件,确认是DairoMUSIC服务器之后跳转到登录页面
@@ -52,7 +52,7 @@ class LoginViewModel: ObservableObject {
             //去掉最后的/
             domain.removeLast()
         }
-        SettingShared.checkServer(domain: domain){ config in
+        SettingStore.checkServer(domain: domain){ config in
             self.domain = domain
             self.allowRegister = config.allowRegister
             self.showLogin = true
@@ -83,7 +83,7 @@ class LoginViewModel: ObservableObject {
             Toast.show("密码必填")
             return
         }
-        SettingShared.login(domain: self.domain, editIndex: self.editLoggedIndex, request: {
+        SettingStore.login(domain: self.domain, editIndex: self.editAccountIndex, request: {
             UserApi.login(account: account, pwd: pwd)
         }, success: {
             DiscoverPage().relaunch()
@@ -92,7 +92,7 @@ class LoginViewModel: ObservableObject {
 
     /// 免注册使用点击事件,同一台设备再次使用时找回同一个临时会员
     func onTempLoginClick(){
-        SettingShared.login(domain: self.domain, editIndex: self.editLoggedIndex, request: {
+        SettingStore.login(domain: self.domain, editIndex: self.editAccountIndex, request: {
             UserApi.tempLogin()
         }, success: {
             DiscoverPage().relaunch()

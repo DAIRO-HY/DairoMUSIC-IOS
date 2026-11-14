@@ -50,8 +50,8 @@ struct FavoritePage: View {
                         }
                     }
                     self.cardRow(isFirst: self.vm.likeFavorite == nil, isLast: true){
-                        NavigationLink(destination: MusicListPage(favoriteId: FavoriteType.LATE, name: "最近播放")){
-                            FavoriteItemView(name: "最近播放", icon: "clock.fill", iconColor: .theme, musicCount: self.vm.lateCount)
+                        NavigationLink(destination: MusicListPage(favoriteId: FavoriteId.RECENT, name: "最近播放")){
+                            FavoriteItemView(name: "最近播放", icon: "clock.fill", iconColor: .theme, musicCount: self.vm.recentCount)
                         }
                     }
                 }
@@ -115,8 +115,8 @@ struct FavoritePage: View {
             .modifier(CardMarginModifier(margin: FavoritePage.useContentMargins ? FavoritePage.CARD_MARGIN : 0))
             .environment(\.editMode, self.$editMode)
             .refreshable {
-                FavoriteShared.loadInBackground()
-                MusicShared.loadInBackground()
+                FavoriteStore.loadInBackground()
+                MusicStore.loadInBackground()
             }
             .safeAreaInset(edge: .bottom, spacing: 0){
                 HomeTabView(.FAVORITE_PAGE)

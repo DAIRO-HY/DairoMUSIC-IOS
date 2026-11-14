@@ -17,7 +17,7 @@ import DairoUI_IOS
 enum PlayCountUtil {
 
     /// 待提交记录的本地缓存名,内容是歌曲ID,播放了几次就有几个
-    private static let _KEY_PENDING = "play_count_pending"
+    private static let KEY_PENDING = "play_count_pending"
 
     /// 一次最多提交的记录数
     private static let MAX_BATCH = 500
@@ -40,7 +40,7 @@ enum PlayCountUtil {
 
     /// 歌曲播放完成,记录一次并提交;采集平台的搜索结果(还没有加入曲库)不计
     static func add(_ music: MusicModel) {
-        guard music.id > 0, let name = SettingShared.accountObjectName(PlayCountUtil._KEY_PENDING) else{
+        guard music.id > 0, let name = SettingStore.accountObjectName(PlayCountUtil.KEY_PENDING) else{
             return
         }
         var ids = PlayCountUtil.read(name)
@@ -51,7 +51,7 @@ enum PlayCountUtil {
 
     /// 提交当前账号的待提交记录,超过500条时分批提交
     static func submit() {
-        guard let name = SettingShared.accountObjectName(PlayCountUtil._KEY_PENDING), !PlayCountUtil.submitting.contains(name) else{
+        guard let name = SettingStore.accountObjectName(PlayCountUtil.KEY_PENDING), !PlayCountUtil.submitting.contains(name) else{
             return
         }
         let batch = Array(PlayCountUtil.read(name).prefix(PlayCountUtil.MAX_BATCH))

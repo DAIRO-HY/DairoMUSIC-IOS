@@ -25,11 +25,11 @@ class ServerConfig: ObservableObject {
     /// 服务器是否开启了视频采集,获取到配置之前按开启处理
     @Published private(set) var videoEnable = true
 
-    /// 当前会员的VIP状态,会员信息保存时更新;没有登录、老版本的会员信息里没有时为nil,按VIP功能没有生效处理
+    /// 当前会员的VIP状态,会员信息保存时更新;没有登录时为nil,按VIP功能没有生效处理
     @Published private(set) var vip: VipModel?
 
     private init() {
-        self.vip = SettingShared.user?.vip
+        self.vip = SettingStore.user?.vip
     }
 
     /// VIP功能对当前会员是否生效,没有生效时不显示任何VIP相关的内容
@@ -68,7 +68,7 @@ class ServerConfig: ObservableObject {
 
     /// 从服务器获取配置,没有登录时不处理
     func load() {
-        if !SettingShared.isLogin{
+        if !SettingStore.isLogin{
             return
         }
         CommonApi.config().hide().fail{ _ in

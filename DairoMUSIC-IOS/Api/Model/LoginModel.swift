@@ -1,9 +1,8 @@
-struct LoginModel : Codable {
+struct LoginModel: Codable {
 
-  	/** 登录票据 **/
-  var token: String
+    /// 登录票据
+    var token: String
 
-  	/** 会员信息 **/
-  var user: UserModel
-
+    /// 会员信息
+    var user: UserModel
 }

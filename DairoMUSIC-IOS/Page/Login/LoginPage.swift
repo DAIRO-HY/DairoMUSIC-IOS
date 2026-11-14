@@ -35,7 +35,7 @@ struct LoginPage: View {
 
     private var content: some View {
         SettingStack(embedInNavigationStack: false) {
-            SettingPage(title: self.vm.editLoggedIndex == nil ? "登录" : "编辑账号") {
+            SettingPage(title: self.vm.editAccountIndex == nil ? "登录" : "编辑账号") {
                 SettingCustomView {
                     VStack(spacing: 12){
                         Image("logo")
@@ -54,7 +54,7 @@ struct LoginPage: View {
                     SettingTextField(title: "密码", text: self.$vm.pwd, placeholder: "请输入密码", type: .password)
                 }
                 SettingGroup{
-                    SettingButtonSingle(self.vm.editLoggedIndex == nil ? "登录" : "保存",action: self.vm.onLoginClick)
+                    SettingButtonSingle(self.vm.editAccountIndex == nil ? "登录" : "保存",action: self.vm.onLoginClick)
                 }
                 SettingCustomView {
 
@@ -71,7 +71,7 @@ struct LoginPage: View {
                         Group{
                             if self.isRoot{
                                 Button(action: {
-                                    ServerPage(LoginViewModel(domain: self.vm.domain, account: self.vm.account, editLoggedIndex: self.vm.editLoggedIndex)).relaunch()
+                                    ServerPage(LoginViewModel(domain: self.vm.domain, account: self.vm.account, editAccountIndex: self.vm.editAccountIndex)).relaunch()
                                 }){
                                     Text("更换服务器")
                                 }

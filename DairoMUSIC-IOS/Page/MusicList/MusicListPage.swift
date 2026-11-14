@@ -82,7 +82,7 @@ struct MusicListPage: View {
                 }
                 .accessibilityLabel("编辑歌单")
             }
-            if self.vm.favoriteId == FavoriteType.LATE && !self.vm.musicList.isEmpty{
+            if self.vm.favoriteId == FavoriteId.RECENT && !self.vm.musicList.isEmpty{
                 Button(action: {
                     self.showClearAlert = true
                 }){
@@ -108,7 +108,7 @@ struct MusicListPage: View {
             Text("歌曲没有选择的音质时下载最接近的音质")
         }
         .alert("确定清空最近播放吗？", isPresented: self.$showClearAlert){
-            Button("清空", role: .destructive, action: self.vm.clearLate)
+            Button("清空", role: .destructive, action: self.vm.clearRecent)
             Button("取消", role: .cancel){}
         }
     }
@@ -121,7 +121,7 @@ struct MusicListPage: View {
                     Image(systemName: "heart.fill").font(.largeTitle).foregroundColor(.like)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(uiColor: .secondarySystemBackground))
-                } else if self.vm.favoriteId == FavoriteType.LATE{
+                } else if self.vm.favoriteId == FavoriteId.RECENT{
                     Image(systemName: "clock.fill").font(.largeTitle).foregroundColor(.theme)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(uiColor: .secondarySystemBackground))

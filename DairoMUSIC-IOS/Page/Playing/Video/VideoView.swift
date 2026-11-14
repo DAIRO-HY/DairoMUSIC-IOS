@@ -79,8 +79,8 @@ struct VideoView: View {
         HStack{
             Menu{
                 Picker("清晰度", selection: Binding(get: { self.vm.quality }, set: { self.vm.onQualityChange($0) })){
-                    Text("流畅").tag(SettingShared.VIDEO_QUALITY_SMOOTH)
-                    Text(self.vm.isOriginalVipOnly ? "原画(VIP)" : "原画").tag(SettingShared.VIDEO_QUALITY_ORIGINAL)
+                    Text("流畅").tag(SettingStore.VIDEO_QUALITY_SMOOTH)
+                    Text(self.vm.isOriginalVipOnly ? "原画(VIP)" : "原画").tag(SettingStore.VIDEO_QUALITY_ORIGINAL)
                 }
             } label: {
                 Label(self.qualityText, systemImage: "sparkles.tv")
@@ -110,6 +110,6 @@ struct VideoView: View {
         if self.vm.isOriginalOnly{
             return "原画"
         }
-        return self.vm.quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
+        return self.vm.quality == SettingStore.VIDEO_QUALITY_ORIGINAL ? "原画" : "流畅"
     }
 }

@@ -1,5 +1,5 @@
 //
-//  LoggedPage.swift
+//  AccountListPage.swift
 //  DairoMUSIC-IOS
 //
 //  Created by zhoulq on 2026/11/07.
@@ -8,7 +8,7 @@
 import SwiftUI
 import DairoUI_IOS
 
-struct LoggedPage: View {
+struct AccountListPage: View {
 
     ///操作按钮菜单显示
     @State private var showActionMenu = false
@@ -16,7 +16,7 @@ struct LoggedPage: View {
     /// 显示确认删除框
     @State private var showDeleteAlert = false
 
-    @StateObject private var vm = LoggedViewModel()
+    @StateObject private var vm = AccountListViewModel()
     private let embedInNavigationStack: Bool
     init(embedInNavigationStack: Bool = false){
         self.embedInNavigationStack = embedInNavigationStack
@@ -36,8 +36,8 @@ struct LoggedPage: View {
                 }
                 SettingGroup{
                     SettingCustomView{
-                        ForEach(self.vm.loggedUserList.indices, id: \.self){ i in
-                            let item = self.vm.loggedUserList[i]
+                        ForEach(self.vm.accountList.indices, id: \.self){ i in
+                            let item = self.vm.accountList[i]
                             Button(action:{
                                 self.vm.actionIndex = i
                                 self.showActionMenu = true
@@ -47,7 +47,7 @@ struct LoggedPage: View {
                                         Text(item.name).foregroundColor(.primary).frame(maxWidth: .infinity, alignment: .leading)
                                         Text(item.domain).font(.subheadline).foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .leading)
                                     }.frame(maxWidth: .infinity)
-                                    Image(systemName: "checkmark").foregroundColor(.primary).opacity(item.isLogining ? 1 : 0.3)
+                                    Image(systemName: "checkmark").foregroundColor(.primary).opacity(item.isCurrent ? 1 : 0.3)
                                 }
                             }
                             .padding(.vertical, 8)
@@ -68,10 +68,10 @@ struct LoggedPage: View {
 
                 //退出登录,让服务端删除这个票据
                 UserApi.logout().hide().send{}
-                SettingShared.logout()
+                SettingStore.logout()
 
                 //删除之后重新打开该页面
-                LoggedPage(embedInNavigationStack: true).relaunch()
+                AccountListPage(embedInNavigationStack: true).relaunch()
             }
             Button("取消", role: .cancel) { }
         } message: {
@@ -83,7 +83,7 @@ struct LoggedPage: View {
             }
             Button("编辑") {
                 let actionItem = self.vm.actionItem
-                LoginPage(LoginViewModel(domain: actionItem.domain, account: actionItem.account, editLoggedIndex: self.vm.actionIndex)).relaunch()
+                LoginPage(LoginViewModel(domain: actionItem.domain, account: actionItem.account, editAccountIndex: self.vm.actionIndex)).relaunch()
             }
             Button("复制") {
                 let actionItem = self.vm.actionItem
@@ -91,7 +91,7 @@ struct LoggedPage: View {
             }
             Button("移除") {
                 let actionItem = self.vm.actionItem
-                if actionItem.isLogining{
+                if actionItem.isCurrent{
                     self.showDeleteAlert = true
                 } else {
                     self.vm.onDeleteClick()
@@ -110,7 +110,7 @@ struct LoggedPage: View {
             LoginPage(LoginViewModel(domain: account.domain, account: account.account)).relaunch()
             return
         }
-        SettingShared.switchAccount(account, success:{
+        SettingStore.switchAccount(account, success:{
             Toast.show("登录成功")
             DiscoverPage().relaunch()
         })
@@ -118,5 +118,5 @@ struct LoggedPage: View {
 }
 
 #Preview {
-    LoggedPage()
+    AccountListPage()
 }

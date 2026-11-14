@@ -33,7 +33,7 @@ class MusicInfoViewModel: ObservableObject {
     @Published var displayTag: String?
 
     /// 是否信任会员,可以查看、修改审核状态,纠错直接生效
-    let isFriend = SettingShared.user?.isFriend == true
+    let isFriend = SettingStore.user?.isFriend == true
 
     /// 审核状态,只有信任会员才有,获取歌曲详情之前为nil
     @Published var auditState: Int?
@@ -51,12 +51,12 @@ class MusicInfoViewModel: ObservableObject {
 
     /// 可以收藏到的歌单
     var favoriteList: [FavoriteModel] {
-        return FavoriteShared.list
+        return FavoriteStore.list
     }
 
     init(_ music: MusicModel, favoriteId: Int64?) {
         self.music = music
-        self.favorite = favoriteId.flatMap{ FavoriteShared.byId($0) }
+        self.favorite = favoriteId.flatMap{ FavoriteStore.byId($0) }
         self.updateLike()
         self.updateDownload()
     }
@@ -125,14 +125,14 @@ class MusicInfoViewModel: ObservableObject {
 
     /// 更新"我喜欢"状态
     func updateLike(){
-        self.isLike = self.music.id != 0 && MusicShared.isLike(self.music.id)
+        self.isLike = self.music.id != 0 && MusicStore.isLike(self.music.id)
     }
 
     /// 喜欢点击事件
     func onLikeClick(){
 
         //采集平台的歌曲加入曲库之后更新歌曲ID,否则按ID判断"我喜欢"状态时一直是没有喜欢
-        MusicShared.toggleLike(self.music){ musicId in
+        MusicStore.toggleLike(self.music){ musicId in
             self.music.id = musicId
             self.updateLike()
             self.updateDownload()
@@ -141,7 +141,7 @@ class MusicInfoViewModel: ObservableObject {
 
     /// 收藏到歌单
     func onAddToFavoriteClick(_ favorite: FavoriteModel){
-        FavoriteShared.addMusic(self.music, favoriteId: favorite.id){ musicId in
+        FavoriteStore.addMusic(self.music, favoriteId: favorite.id){ musicId in
             self.music.id = musicId
             Toast.show("已收藏到「\(favorite.name)」")
         }
@@ -152,7 +152,7 @@ class MusicInfoViewModel: ObservableObject {
         guard let favorite = self.favorite else{
             return
         }
-        FavoriteShared.removeMusic(musicId: self.music.id, favoriteId: favorite.id){
+        FavoriteStore.removeMusic(musicId: self.music.id, favoriteId: favorite.id){
             Toast.show("已删除")
             success()
         }
@@ -160,9 +160,9 @@ class MusicInfoViewModel: ObservableObject {
 
     /// 分享,分享链接是服务器上的网页,可以在线播放和下载
     func onShareClick(){
-        MusicShared.ensureId(self.music){ musicId in
+        MusicStore.ensureId(self.music){ musicId in
             self.music.id = musicId
-            guard let url = URL(string: SettingShared.domainNotNull + ApiConst.SHARE_MUSIC + "?id=\(musicId)") else{
+            guard let url = URL(string: SettingStore.domainNotNull + ApiConst.SHARE_MUSIC + "?id=\(musicId)") else{
                 return
             }
             let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)

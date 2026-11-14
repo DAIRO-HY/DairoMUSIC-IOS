@@ -20,7 +20,7 @@ class FavoriteEditViewModel: ObservableObject {
 
     init(favoriteId: Int64) {
         self.favoriteId = favoriteId
-        if let favorite = FavoriteShared.byId(favoriteId){
+        if let favorite = FavoriteStore.byId(favoriteId){
             self.name = favorite.name
             self.description = favorite.description ?? ""
             self.logo = favorite.logo
@@ -36,7 +36,7 @@ class FavoriteEditViewModel: ObservableObject {
         }
         FavoriteApi.edit(id: self.favoriteId, name: name, description: self.description.trim()).send{
             Toast.show("保存成功")
-            FavoriteShared.loadInBackground()
+            FavoriteStore.loadInBackground()
         }
     }
 
@@ -48,7 +48,7 @@ class FavoriteEditViewModel: ObservableObject {
         }
         FavoriteApi.logo(id: self.favoriteId, jpeg: jpeg).send{
             self.logo = $0
-            FavoriteShared.loadInBackground()
+            FavoriteStore.loadInBackground()
         }
     }
 }

@@ -18,7 +18,7 @@ class FavoriteViewModel: ObservableObject {
     @Published var userFavorites = [FavoriteModel]()
 
     /// 最近播放的歌曲数
-    @Published var lateCount = 0
+    @Published var recentCount = 0
 
     /// 新建歌单的名字
     @Published var createName = ""
@@ -29,19 +29,19 @@ class FavoriteViewModel: ObservableObject {
         NotificationCenter.default.publisher(for: EventName.FAVORITE_CHANGE).sink{ [weak self] _ in
             self?.loadData()
         }.store(in: &self.cancellables)
-        NotificationCenter.default.publisher(for: EventName.LATE_CHANGE).sink{ [weak self] _ in
-            self?.lateCount = MusicShared.lateMusic.count
+        NotificationCenter.default.publisher(for: EventName.RECENT_CHANGE).sink{ [weak self] _ in
+            self?.recentCount = MusicStore.recentMusic.count
         }.store(in: &self.cancellables)
         self.loadData()
-        self.lateCount = MusicShared.lateMusic.count
+        self.recentCount = MusicStore.recentMusic.count
 
         //先显示本地缓存,再从服务器更新
-        FavoriteShared.loadInBackground()
+        FavoriteStore.loadInBackground()
     }
 
     /// 加载本地的歌单
     private func loadData(){
-        let list = FavoriteShared.list
+        let list = FavoriteStore.list
         self.likeFavorite = list.first{ $0.isLike }
         self.userFavorites = list.filter{ !$0.isLike }
     }
@@ -55,7 +55,7 @@ class FavoriteViewModel: ObservableObject {
         }
         FavoriteApi.add(name: name).send{ _ in
             Toast.show("创建成功")
-            FavoriteShared.loadInBackground()
+            FavoriteStore.loadInBackground()
         }
     }
 
@@ -63,8 +63,8 @@ class FavoriteViewModel: ObservableObject {
     func onDeleteClick(_ favorite: FavoriteModel){
         FavoriteApi.delete(id: favorite.id).send{
             Toast.show("删除成功")
-            FavoriteShared.loadInBackground()
-            MusicShared.loadInBackground()
+            FavoriteStore.loadInBackground()
+            MusicStore.loadInBackground()
         }
     }
 
@@ -76,7 +76,7 @@ class FavoriteViewModel: ObservableObject {
             ids.insert(like.id, at: 0)
         }
         FavoriteApi.sort(ids: ids).hide().send{
-            FavoriteShared.loadInBackground()
+            FavoriteStore.loadInBackground()
         }
     }
 }

@@ -14,7 +14,7 @@ struct ServerPage: View {
     //系统弹窗等导致App状态变化时,页面会重新创建,必须用StateObject才能保留已输入的内容
     @StateObject private var vm: LoginViewModel
 
-    init(_ vm: LoginViewModel = LoginViewModel(domain: SettingShared.domainNotNull)) {
+    init(_ vm: LoginViewModel = LoginViewModel(domain: SettingStore.domainNotNull)) {
         self._vm = StateObject(wrappedValue: vm)
     }
 
@@ -40,7 +40,7 @@ struct ServerPage: View {
                     SettingCustomView {
                         HStack{
                             Button(action: {
-                                LoggedPage(embedInNavigationStack: true).relaunch()
+                                AccountListPage(embedInNavigationStack: true).relaunch()
                             }){
                                 Text("选择账号")
                             }

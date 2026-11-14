@@ -17,7 +17,7 @@ enum EventName {
     static let MUSIC_CHANGE = Notification.Name("MUSIC_CHANGE")
 
     /// 最近播放发生了变化
-    static let LATE_CHANGE = Notification.Name("LATE_CHANGE")
+    static let RECENT_CHANGE = Notification.Name("RECENT_CHANGE")
 
     /// 定时停止播放的时间到了
     static let SLEEP_TIMER_END = Notification.Name("SLEEP_TIMER_END")
