@@ -26,7 +26,7 @@ struct EmailCodePage: View {
                     }
                 }
                 SettingGroup(footer: self.footer){
-                    SettingTextField(title: "邮箱", text: self.$vm.email, placeholder: "请输入邮箱")
+                    SettingTextField(title: "邮箱", text: self.$vm.email, placeholder: "请输入邮箱", keyboardType: .emailAddress)
                     SettingCustomView{
                         HStack{
                             Text("验证码")

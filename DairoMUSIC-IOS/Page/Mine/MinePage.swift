@@ -12,7 +12,11 @@ import DairoUI_IOS
 struct MinePage: View {
 
     ///主题选择数据
-    private let themeData = [SettingPickerData("跟随系统",0),SettingPickerData("明亮模式",1),SettingPickerData("黑暗模式",2)]
+    private let themeData = [
+        SettingPickerData("跟随系统",ThemeMode.system.rawValue),
+        SettingPickerData("明亮模式",ThemeMode.light.rawValue),
+        SettingPickerData("黑暗模式",ThemeMode.dark.rawValue)
+    ]
 
     ///音质选择数据,非VIP只能听标准音质,其他音质显示VIP标记
     private var bitRateData: [SettingPickerData<Int>] {
@@ -30,8 +34,8 @@ struct MinePage: View {
     //视图模型
     @StateObject private var vm = MineViewModel()
 
-    //主题设置值,DairoUI_IOS的RootView按这个名字读取,不能改
-    @AppStorage("theme") private var theme = 0
+    //主题设置值
+    @AppStorage(ThemeMode.storageKey) private var theme = ThemeMode.system.rawValue
 
     /// 定时停止播放
     @ObservedObject private var sleepTimer = SleepTimer.shared

@@ -182,7 +182,7 @@ enum SettingStore {
             return nil
         }
         let folder = "account_cache/\(account.serverId)_\(account.userId)"
-        _ = FileUtil.mkdirs(LocalObjectUtil.mFolder + "/" + folder)
+        _ = FileUtil.createDirectory(LocalObjectUtil.resolvedFolder + "/" + folder)
         return folder + "/" + name
     }
 

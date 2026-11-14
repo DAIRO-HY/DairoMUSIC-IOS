@@ -32,7 +32,7 @@ struct ServerPage: View {
                         }.frame(maxWidth: .infinity)
                     }
                     SettingGroup(footer: "请输入DairoMUSIC服务器的地址，例如 192.168.1.100:8020、https://music.example.com。没有写http://或https://时按http://连接", allowAttributedFooter: false){
-                        SettingTextField(title: "服务器", text: self.$vm.domain, placeholder: "例 192.168.1.100:8020")
+                        SettingTextField(title: "服务器", text: self.$vm.domain, placeholder: "例 192.168.1.100:8020", keyboardType: .URL)
                     }
                     SettingGroup{
                         SettingButtonSingle("下一步", action: self.vm.onNextClick)
