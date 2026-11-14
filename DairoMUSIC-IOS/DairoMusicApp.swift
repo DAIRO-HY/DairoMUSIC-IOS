@@ -47,6 +47,11 @@ struct DairoMusicApp: App {
             case .active:
                 FileSdkUtil.checkServer()
                 ServerConfig.shared.load()
+
+                //VIP状态可能变化了(到期、兑换、后台修改)
+                if SettingShared.isLogin{
+                    SettingShared.loadUserInBackground(silent: true)
+                }
             case .background:
                 PlayerManager.shared.savePlayingInfo()
                 FileSdkUtil.flush()

@@ -28,7 +28,7 @@ struct MusicInfoPage: View {
     /// 显示删除哪种音质的选择(下载了多种音质时)
     @State private var showDeleteDownloadPicker = false
 
-    /// 服务器配置,不允许下载歌曲时不显示下载按钮
+    /// 服务器配置和VIP状态,服务器不允许下载歌曲时不显示下载按钮,非VIP点击时提示
     @ObservedObject private var config = ServerConfig.shared
 
     @Environment(\.dismiss) private var dismiss
@@ -72,7 +72,9 @@ struct MusicInfoPage: View {
                         .icon("square.and.arrow.up", backgroundColor: .blue)
                     if self.config.allowDownloadMusic{
                         SettingButton("下载", tip: self.vm.downloadedText){
-                            self.showDownloadPicker = true
+                            if self.config.checkDownloadVip(){
+                                self.showDownloadPicker = true
+                            }
                         }
                         .icon("arrow.down.circle.fill", backgroundColor: .green)
                     }

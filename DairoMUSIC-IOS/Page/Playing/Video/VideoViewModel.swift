@@ -101,9 +101,14 @@ class VideoViewModel: ObservableObject {
     /// 监听服务器配置,不能放在cancellables里,停止播放时会清空cancellables
     private var configCancellables = Set<AnyCancellable>()
 
-    /// 是否允许下载视频,服务器的设置,不允许时不显示下载按钮
+    /// 是否允许下载视频,服务器的设置,不允许时不显示下载按钮;非VIP点击时提示需要开通VIP
     var allowDownload: Bool {
         return ServerConfig.shared.allowDownloadVideo
+    }
+
+    /// 原画是否只有VIP才能看,清晰度选项上显示VIP标记
+    var isOriginalVipOnly: Bool {
+        return ServerConfig.shared.isVipLimited
     }
 
     /// 是否允许保存到相册,服务器的设置
@@ -165,6 +170,10 @@ class VideoViewModel: ObservableObject {
         if quality == self.quality{
             return
         }
+        if quality == SettingShared.VIDEO_QUALITY_ORIGINAL && self.isOriginalVipOnly{
+            Toast.show("原画需要VIP")
+            return
+        }
         self.quality = quality
         SettingShared.videoQuality = quality
         self.reloadKeepingTime()
@@ -217,6 +226,9 @@ class VideoViewModel: ObservableObject {
     /// 加载视频
     private func load() {
         self.stop()
+
+        //非VIP播放流畅版时只临时改了清晰度,每次加载都按设置重新选择
+        self.quality = SettingShared.videoQuality
         guard let music = self.music else{
             self.tip = "没有正在播放的歌曲"
             return
@@ -334,7 +346,13 @@ class VideoViewModel: ObservableObject {
     private func onVideo(_ video: VideoModel, music: MusicModel) {
         switch video.state{
         case 2://有视频
-            let file = self.quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? video.original : video.smooth
+            var file = self.quality == SettingShared.VIDEO_QUALITY_ORIGINAL ? video.original : video.smooth
+
+            //非VIP不能看原画,改为播放流畅版(不修改设置,成为VIP之后还是播放原画)
+            if file?.vipOnly == true, let smooth = video.smooth, smooth.vipOnly != true{
+                self.quality = SettingShared.VIDEO_QUALITY_SMOOTH
+                file = smooth
+            }
             guard let file else{
                 self.waitAndRetry(music, tip: "服务器正在转码中")
                 return
@@ -464,6 +482,11 @@ class VideoViewModel: ObservableObject {
 
     /// 下载按钮点击事件,允许保存到相册时先询问
     func onDownloadClick() {
+
+        //已经下载的(VIP到期之前下载的)还可以保存到相册
+        if !self.isDownloaded && !ServerConfig.shared.checkDownloadVip(){
+            return
+        }
         if self.allowSaveAlbum{
             self.showSaveAlbumConfirm = true
             return

@@ -14,12 +14,18 @@ struct MinePage: View {
     ///主题选择数据
     private let themeData = [SettingPickerData("跟随系统",0),SettingPickerData("明亮模式",1),SettingPickerData("黑暗模式",2)]
 
-    ///音质选择数据
-    private let bitRateData = [
-        SettingPickerData("标准(128K)",128),
-        SettingPickerData("超高品质(320K)",320),
-        SettingPickerData("无损",SettingShared.BIT_RATE_LOSSLESS)
-    ]
+    ///音质选择数据,非VIP只能听标准音质,其他音质显示VIP标记
+    private var bitRateData: [SettingPickerData<Int>] {
+        let vip = self.config.isVipLimited ? "(VIP)" : ""
+        return [
+            SettingPickerData("标准(128K)",SettingShared.BIT_RATE_STANDARD),
+            SettingPickerData("超高品质(320K)" + vip,320),
+            SettingPickerData("无损" + vip,SettingShared.BIT_RATE_LOSSLESS)
+        ]
+    }
+
+    /// VIP状态
+    @ObservedObject private var config = ServerConfig.shared
 
     //视图模型
     @StateObject private var vm = MineViewModel()
@@ -57,6 +63,13 @@ struct MinePage: View {
                         SettingNavigationLink("个人资料",tip: self.vm.user?.isTemp == true ? "未绑定邮箱" : "昵称、头像"){
                             ProfilePage().anyView
                         }.icon("person.crop.circle.fill", backgroundColor: Color.blue)
+
+                        //VIP功能没有生效(后台没有开启等)时不显示
+                        if let vip = self.config.vip, vip.enable{
+                            SettingNavigationLink("VIP会员",tip: vip.statusText){
+                                VipRedeemPage().anyView
+                            }.icon("crown.fill", backgroundColor: Color.yellow)
+                        }
                         if self.vm.user?.isTemp == false{
                             SettingNavigationLink("修改密码"){
                                 ModifyPwdPage().anyView
@@ -164,6 +177,11 @@ struct MinePage: View {
                         .foregroundColor(.primary)
                         .font(.title3)
                         .lineLimit(1)
+                    if self.config.vip?.enable == true && self.config.vip?.isVip == true{
+                        Text("VIP").font(.caption2).bold().foregroundColor(.orange)
+                            .padding(.horizontal, 4)
+                            .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.orange, lineWidth: 0.5))
+                    }
                     if self.vm.user?.isTemp == true && self.vm.displayName != "临时会员"{
                         Text("临时会员").font(.caption2).foregroundColor(.secondary)
                             .padding(.horizontal, 4)

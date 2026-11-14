@@ -141,7 +141,9 @@ struct MusicListPage: View {
                     Spacer()
                     if self.config.allowDownloadMusic && !self.vm.musicList.isEmpty{
                         Button(action: {
-                            self.showDownloadPicker = true
+                            if self.config.checkDownloadVip(){
+                                self.showDownloadPicker = true
+                            }
                         }){
                             Label("全部下载", systemImage: "arrow.down.circle")
                                 .font(.footnote)

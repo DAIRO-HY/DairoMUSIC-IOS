@@ -80,7 +80,7 @@ struct VideoView: View {
             Menu{
                 Picker("清晰度", selection: Binding(get: { self.vm.quality }, set: { self.vm.onQualityChange($0) })){
                     Text("流畅").tag(SettingShared.VIDEO_QUALITY_SMOOTH)
-                    Text("原画").tag(SettingShared.VIDEO_QUALITY_ORIGINAL)
+                    Text(self.vm.isOriginalVipOnly ? "原画(VIP)" : "原画").tag(SettingShared.VIDEO_QUALITY_ORIGINAL)
                 }
             } label: {
                 Label(self.qualityText, systemImage: "sparkles.tv")

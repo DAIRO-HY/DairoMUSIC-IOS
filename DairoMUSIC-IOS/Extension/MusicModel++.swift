@@ -46,9 +46,16 @@ extension MusicModel {
         return self.files?.compactMap{ $0.bitRate }.max()
     }
 
+    /// 可以在线播放、下载的文件,按音质从低到高排序
+    /// 只从有播放地址的文件里选;非VIP只能用最低音质(标准音质),歌单等本地缓存的歌曲信息可能是VIP到期之前获取的,这里也要限制
+    var playableFiles: [MusicFileModel] {
+        let files = (self.files ?? []).filter{ $0.url != nil }.sorted{ ($0.bitRate ?? 0) < ($1.bitRate ?? 0) }
+        return ServerConfig.shared.isVipLimited ? Array(files.prefix(1)) : files
+    }
+
     /// 按目标音质选择歌曲文件:不超过目标音质的最高音质,所有文件都超过时选最低音质
     func file(bitRate target: Int) -> MusicFileModel? {
-        let files = (self.files ?? []).sorted{ ($0.bitRate ?? 0) < ($1.bitRate ?? 0) }
+        let files = self.playableFiles
         return files.last{ ($0.bitRate ?? 0) <= target } ?? files.first
     }
 

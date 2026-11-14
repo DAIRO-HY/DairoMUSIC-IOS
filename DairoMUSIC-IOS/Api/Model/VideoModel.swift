@@ -43,4 +43,7 @@ struct VideoFileModel : Codable, Hashable {
   	/** 播放地址 **/
   var url: String?
 
+  	/** 是否只有VIP可以播放,非VIP时原画为true,没有播放地址 **/
+  var vipOnly: Bool?
+
 }

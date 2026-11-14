@@ -17,6 +17,8 @@ enum ApiConst {
   static let USER_UNREGISTER = "/api/user/unregister"
   static let USER_LOGOUT = "/api/user/logout"
 
+  static let VIP_REDEEM = "/api/vip/redeem"
+
   static let MUSIC_SEARCH = "/api/music/search"
   static let MUSIC_SEARCH_COLLECT = "/api/music/search_collect"
   static let MUSIC_DETAIL = "/api/music/detail"

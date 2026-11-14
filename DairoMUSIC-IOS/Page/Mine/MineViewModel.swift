@@ -42,6 +42,10 @@ class MineViewModel: ObservableObject {
 
     /// 修改播放音质,歌曲里有所有音质的文件,每首歌开始播放前按设置选择,不用重新获取歌单
     func onBitRateChange(_ bitRate: Int) -> Bool{
+        if bitRate > SettingShared.BIT_RATE_STANDARD && ServerConfig.shared.isVipLimited{
+            Toast.show("超高品质、无损音质需要VIP")
+            return false
+        }
         SettingShared.bitRate = bitRate
         return true
     }

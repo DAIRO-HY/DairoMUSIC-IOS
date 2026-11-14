@@ -31,7 +31,8 @@ enum MusicDownloadUtil {
 
     /// 一首歌可以下载的音质,列出这首歌所有音质的文件和大小;还没有入库的采集平台歌曲不知道有哪些音质,显示通用的选项
     static func qualities(_ music: MusicModel) -> [DownloadQuality] {
-        guard let files = music.files, !files.isEmpty else{
+        let files = music.playableFiles
+        if files.isEmpty{
             return MusicDownloadUtil.QUALITIES
         }
         return files.map{ DownloadQuality(label: MusicModel.qualityText($0.bitRate) + "  " + $0.size.fileSize, bitRate: $0.bitRate ?? 0) }

@@ -55,8 +55,11 @@ struct MusicFileModel : Codable, Hashable {
   	/** 格式 **/
   var format: String
 
-  	/** 播放地址(支持断点续传) **/
+  	/** 播放地址(支持断点续传),非VIP时只有最低音质有地址 **/
   var url: String?
+
+  	/** 是否只有VIP可以播放,非VIP时为true的文件没有播放地址 **/
+  var vipOnly: Bool?
 
 }
 

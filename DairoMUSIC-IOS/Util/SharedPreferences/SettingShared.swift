@@ -23,12 +23,27 @@ enum SettingShared {
 
         set{
             _ = LocalObjectUtil.write(newValue, SettingShared._KEY_USER)
+            ServerConfig.shared.updateVip(newValue?.vip)
         }
     }
 
+    /// 更新本地保存的VIP状态(兑换VIP之后)
+    static func updateVip(_ vip: VipModel?) {
+        guard var user = SettingShared.user else{
+            return
+        }
+        user.vip = vip
+        SettingShared.user = user
+    }
+
     /// 后台刷新会员信息,不弹出加载等待框
-    static func loadUserInBackground(_ success: @escaping (_ user: UserModel) -> Void = { _ in }) {
-        UserApi.info().hide().send{
+    /// - Parameter silent: 失败时不提示(启动App、回到前台时刷新VIP状态)
+    static func loadUserInBackground(silent: Bool = false, _ success: @escaping (_ user: UserModel) -> Void = { _ in }) {
+        var request = UserApi.info().hide()
+        if silent{
+            request = request.fail{ _ in }.error{ _ in }
+        }
+        request.send{
             SettingShared.user = $0
             SettingShared.updateLoggedUser($0)
             success($0)
@@ -267,6 +282,9 @@ enum SettingShared {
 
     /// 无损音质的比特率
     static let BIT_RATE_LOSSLESS = 999
+
+    /// 标准音质的比特率,非VIP只能听标准音质
+    static let BIT_RATE_STANDARD = 128
 
     /// 目标音质,返回不超过这个音质的最高音质文件
     static var bitRate: Int{
