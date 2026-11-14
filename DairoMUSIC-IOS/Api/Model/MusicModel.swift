@@ -33,6 +33,9 @@ struct MusicModel : Codable, Hashable {
   	/** 播放次数,只有曲库的搜索结果才有 **/
   var playCount: Int?
 
+  	/** 审核状态 0:待审核 1:通过 2:拒绝(曲库里搜索不到),只有信任会员获取歌曲详情时才有 **/
+  var auditState: Int?
+
 }
 
 struct MusicFileModel : Codable, Hashable {

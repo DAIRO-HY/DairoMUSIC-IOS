@@ -32,6 +32,23 @@ class MusicInfoViewModel: ObservableObject {
     /// 显示的文件的说明:已下载、已缓存,在线播放时为nil
     @Published var displayTag: String?
 
+    /// 是否信任会员,可以查看、修改审核状态,纠错直接生效
+    let isFriend = SettingShared.user?.isFriend == true
+
+    /// 审核状态,只有信任会员才有,获取歌曲详情之前为nil
+    @Published var auditState: Int?
+
+    /// 审核状态的选项
+    static let AUDIT_STATES = [(0, "待审核"), (1, "通过"), (2, "拒绝")]
+
+    /// 审核状态的说明
+    var auditText: String {
+        guard let state = self.auditState else{
+            return ""
+        }
+        return MusicInfoViewModel.AUDIT_STATES.first{ $0.0 == state }?.1 ?? ""
+    }
+
     /// 可以收藏到的歌单
     var favoriteList: [FavoriteModel] {
         return FavoriteShared.list
@@ -42,6 +59,32 @@ class MusicInfoViewModel: ObservableObject {
         self.favorite = favoriteId.flatMap{ FavoriteShared.byId($0) }
         self.updateLike()
         self.updateDownload()
+    }
+
+    /// 信任会员获取歌曲详情:审核状态,纠错之后的歌名、歌手、专辑
+    func loadDetail(){
+        guard self.isFriend, self.music.id != 0 else{
+            return
+        }
+        let musicId = self.music.id
+        MusicApi.detail(id: musicId).hide().fail{ _ in }.error{ _ in }.send{ [weak self] detail in
+            guard let self, self.music.id == musicId else{
+                return
+            }
+            self.auditState = detail.auditState
+            self.music.name = detail.name
+            self.music.artist = detail.artist
+            self.music.album = detail.album
+        }
+    }
+
+    /// 修改审核状态
+    func onAuditClick(_ state: Int){
+        let musicId = self.music.id
+        MusicApi.audit(id: musicId, auditState: state).send{ [weak self] in
+            self?.auditState = state
+            Toast.show("审核状态已修改")
+        }
     }
 
     /// 更新下载状态和显示的文件

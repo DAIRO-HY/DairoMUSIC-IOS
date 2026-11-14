@@ -27,6 +27,7 @@ enum ApiConst {
   static let MUSIC_PLAY = "/api/music/play"
   static let MUSIC_COLLECT = "/api/music/collect"
   static let MUSIC_CORRECT = "/api/music/correct"
+  static let MUSIC_AUDIT = "/api/music/audit"
   static let MUSIC_COMPLAINT = "/api/music/complaint"
   static let MUSIC_COMPLAINT_SAMPLES = "/api/music/complaint_samples"
 

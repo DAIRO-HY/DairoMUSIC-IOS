@@ -28,6 +28,12 @@ struct MusicInfoPage: View {
     /// 显示删除哪种音质的选择(下载了多种音质时)
     @State private var showDeleteDownloadPicker = false
 
+    /// 显示审核状态的选择
+    @State private var showAuditPicker = false
+
+    /// 显示拒绝的确认框
+    @State private var showRejectAlert = false
+
     /// 服务器配置和VIP状态,服务器不允许下载歌曲时不显示下载按钮,非VIP点击时提示
     @ObservedObject private var config = ServerConfig.shared
 
@@ -101,6 +107,14 @@ struct MusicInfoPage: View {
                 }
                 if music.id != 0{
                     SettingGroup{
+
+                        //只有信任会员可以审核
+                        if self.vm.isFriend{
+                            SettingButton("审核状态", tip: self.vm.auditText){
+                                self.showAuditPicker = true
+                            }
+                            .icon("checkmark.shield.fill", backgroundColor: .teal)
+                        }
                         SettingNavigationLink("纠错", tip: "歌名、歌手、专辑不对"){
                             MusicCorrectPage(music).anyView
                         }
@@ -147,6 +161,35 @@ struct MusicInfoPage: View {
                 self.vm.onDeleteDownloadClick(self.vm.downloads)
             }
             Button("取消", role: .cancel){}
+        }
+        .confirmationDialog("审核状态", isPresented: self.$showAuditPicker, titleVisibility: .visible){
+            ForEach(MusicInfoViewModel.AUDIT_STATES, id: \.0){ state in
+                Button(state.1){
+                    if state.0 == 2{
+
+                        //选项框关闭之后再弹出确认框
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3){
+                            self.showRejectAlert = true
+                        }
+                    } else {
+                        self.vm.onAuditClick(state.0)
+                    }
+                }
+            }
+            Button("取消", role: .cancel){}
+        }
+        .alert("确定拒绝这首歌吗？", isPresented: self.$showRejectAlert){
+            Button("拒绝", role: .destructive){
+                self.vm.onAuditClick(2)
+            }
+            Button("取消", role: .cancel){}
+        } message: {
+            Text("拒绝之后所有人从曲库都搜索不到这首歌,已经在歌单里的不受影响")
+        }
+        .onAppear{
+
+            //纠错页面返回时也刷新,信任会员的纠错直接生效
+            self.vm.loadDetail()
         }
         .alert("确定从歌单删除这首歌吗？", isPresented: self.$showRemoveAlert){
             Button("删除", role: .destructive){

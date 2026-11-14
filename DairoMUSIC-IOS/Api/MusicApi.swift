@@ -39,6 +39,11 @@ enum MusicApi {
     return ApiHttp<Int64>(ApiConst.MUSIC_COLLECT,method: "POST",parameter: parameter)
   }
 
+  //审核歌曲,只有信任会员可以审核,auditState 0:待审核 1:通过 2:拒绝
+  static func audit(id: Int64,auditState: Int) -> ApiHttp<EmptyModel>{
+    return ApiHttp<EmptyModel>(ApiConst.MUSIC_AUDIT,method: "POST",parameter: ["id":id,"auditState":auditState])
+  }
+
   //纠错,只提交要修改的字段
   static func correct(id: Int64,name: String,artist: String,album: String) -> ApiHttp<EmptyModel>{
     return ApiHttp<EmptyModel>(ApiConst.MUSIC_CORRECT,method: "POST",parameter: ["id":id,"name":name,"artist":artist,"album":album])
