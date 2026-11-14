@@ -31,8 +31,8 @@ class VideoViewModel: ObservableObject {
     /// 等待采集平台的原画视频最多查询的次数
     private static let COLLECT_MAX_TIMES = 180
 
-    /// 服务器没有开启视频采集,并且没有可以播放的视频时的提示
-    private static let VIDEO_DISABLED_TIP = "该歌曲没有视频或服务器未开启视频采集功能"
+    /// 服务器没有开启视频采集,并且没有可以播放的视频时的提示;不提"采集",避免审核时出现
+    private static let VIDEO_DISABLED_TIP = "该歌曲没有视频或服务器未开启视频功能"
 
     /// 视频播放器,还没有开始播放时为nil
     @Published private(set) var player: AVPlayer?

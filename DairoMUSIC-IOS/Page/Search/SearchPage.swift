@@ -114,20 +114,23 @@ struct SearchPage: View {
             }
             self.musicRows(self.vm.musicList)
         }
-        Section{
-            if self.vm.isCollectSearching{
+
+        //服务器没有开启采集时返回空列表,有结果时才显示采集平台,没有开启采集的服务器上看不到采集相关的文字
+        if self.vm.isCollectSearching{
+            Section{
                 HStack{
                     ProgressView()
-                    Text("正在搜索采集平台").foregroundColor(.secondary).padding(.leading, 6)
+                    Text("正在搜索更多结果").foregroundColor(.secondary).padding(.leading, 6)
                 }
-            } else if self.vm.collectList.isEmpty{
-                Text("采集平台没有找到").foregroundColor(.secondary)
             }
-            self.musicRows(self.vm.collectList)
-        } header: {
-            Text("采集平台")
-        } footer: {
-            Text("采集平台的歌曲加入歌单之后会自动保存到曲库").font(.footnote).foregroundColor(.secondary)
+        } else if !self.vm.collectList.isEmpty{
+            Section{
+                self.musicRows(self.vm.collectList)
+            } header: {
+                Text("采集平台")
+            } footer: {
+                Text("采集平台的歌曲加入歌单之后会自动保存到曲库").font(.footnote).foregroundColor(.secondary)
+            }
         }
     }
 
