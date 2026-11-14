@@ -140,8 +140,11 @@ struct DiscoverPage: View {
     private func favoriteCard(_ favorite: FavoriteModel) -> some View {
         NavigationLink(destination: MusicListPage(favoriteId: favorite.id, name: favorite.name)){
             VStack(alignment: .leading, spacing: 6){
-                MusicImage(favorite.logo, placeholder: "music.note.list")
+                //先确定正方形的区域再放图片,图片直接设置比例时会按图片自己的比例撑开,不同尺寸的封面大小不一
+                Color.clear
                     .aspectRatio(1, contentMode: .fit)
+                    .overlay(MusicImage(favorite.logo, placeholder: "music.note.list"))
+                    .clipped()
                     .cornerRadius(8)
                 Text(favorite.name)
                     .font(.footnote)
