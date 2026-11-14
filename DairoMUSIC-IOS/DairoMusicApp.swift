@@ -19,6 +19,9 @@ struct DairoMusicApp: App {
 
     init(){
 
+        //卸载重装之后删除钥匙串里留下的登录票据,必须在读取票据之前
+        SettingShared.initKeychain()
+
         //提前创建SDK实例
         _ = try? FileSdkUtil.get()
 

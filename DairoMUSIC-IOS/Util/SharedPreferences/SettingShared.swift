@@ -52,25 +52,47 @@ enum SettingShared {
 
     /*----------------------------------------------------------------------------------*/
 
+    /// 是否已经初始化过钥匙串,保存在UserDefaults里,卸载App之后会被删除
+    private static let KEY_KEYCHAIN_INIT = "KEYCHAIN_INIT"
+
+    /// 卸载重装之后,删除钥匙串里上次安装时留下的登录票据(钥匙串里的数据卸载之后依然保留),设备标识保留
+    /// 必须在读取登录票据之前调用
+    static func initKeychain() {
+        if UserDefaults.standard.bool(forKey: SettingShared.KEY_KEYCHAIN_INIT){
+            return
+        }
+        KeychainUtil.deleteAll(except: [Const.KEY_DEVICE_ID])
+        UserDefaults.standard.set(true, forKey: SettingShared.KEY_KEYCHAIN_INIT)
+    }
+
     /// 登录Token
     private static let KEY_TOKEN = "TOKEN"
     private static var mToken: String? = nil
 
-    /// 登录Token
+    /// 登录Token,保存在钥匙串里
     static var token: String {
         get{
-            if SettingShared.mToken == nil{
-                SettingShared.mToken = UserDefaults.standard.string(forKey: KEY_TOKEN)
+            if let token = SettingShared.mToken{
+                return token
             }
-            return SettingShared.mToken ?? ""
+
+            //老版本保存在UserDefaults里,移到钥匙串
+            if let token = UserDefaults.standard.string(forKey: SettingShared.KEY_TOKEN){
+                SettingShared.token = token
+                UserDefaults.standard.removeObject(forKey: SettingShared.KEY_TOKEN)
+                return token
+            }
+            let token = KeychainUtil.read(SettingShared.KEY_TOKEN) ?? ""
+            SettingShared.mToken = token
+            return token
         }
         set{
-            SettingShared.mToken = newValue;
+            SettingShared.mToken = newValue
             if newValue.isEmpty {
-                UserDefaults.standard.removeObject(forKey: KEY_TOKEN)
-                return;
+                KeychainUtil.delete(SettingShared.KEY_TOKEN)
+                return
             }
-            UserDefaults.standard.set(newValue, forKey: KEY_TOKEN)
+            KeychainUtil.write(newValue, SettingShared.KEY_TOKEN)
         }
     }
 
@@ -117,13 +139,41 @@ enum SettingShared {
 
     /*----------------------------------------------------------------------------------*/
 
-    /// 登录过的账号列表
+    private static var mLoggedUserList: [AccountInfo]?
+
+    /// 登录过的账号列表,每个账号的登录票据保存在钥匙串里,不保存到文件
     static var loggedUserList: [AccountInfo]{
         get{
-            return LocalObjectUtil.read([AccountInfo].self, "loggedUserList") ??  [AccountInfo]()
+            if let list = SettingShared.mLoggedUserList{
+                return list
+            }
+            var list = LocalObjectUtil.read([AccountInfo].self, "loggedUserList") ?? [AccountInfo]()
+
+            //老版本的票据保存在文件里,读出来之后移到钥匙串
+            let hasFileToken = list.contains{ !$0.token.isEmpty }
+            for i in list.indices where list[i].token.isEmpty{
+                list[i].token = KeychainUtil.read(list[i].tokenKey) ?? ""
+            }
+            SettingShared.mLoggedUserList = list
+            if hasFileToken{
+                SettingShared.loggedUserList = list
+            }
+            return list
         }
 
         set{
+            //删除已经不在列表里的账号的票据
+            for old in SettingShared.loggedUserList where !newValue.contains(where: { $0.isSame(old) }){
+                KeychainUtil.delete(old.tokenKey)
+            }
+            for account in newValue{
+                if account.token.isEmpty{
+                    KeychainUtil.delete(account.tokenKey)
+                } else {
+                    KeychainUtil.write(account.token, account.tokenKey)
+                }
+            }
+            SettingShared.mLoggedUserList = newValue
             _ = LocalObjectUtil.write(newValue, "loggedUserList")
         }
     }

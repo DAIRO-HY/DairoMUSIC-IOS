@@ -16,10 +16,25 @@ enum Const {
     ///服务器端的GitHub项目地址
     static let SERVER_GITHUB_URL = "https://github.com/DAIRO-HY/DairoMUSIC"
 
-    ///获取设备唯一标识
+    ///设备标识保存在钥匙串里的名字
+    static let KEY_DEVICE_ID = "DEVICE_ID"
+
+    private static var mDeviceId: String?
+
+    ///设备唯一标识,免注册使用时用来找回同一个临时会员
+    ///保存在钥匙串里,卸载重装之后不变;第一次生成时沿用以前用identifierForVendor生成的标识,升级之前的临时会员也能找回
     static var deviceId: String {
-        let uuid = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
-        return uuid.md5
+        if let deviceId = Const.mDeviceId{
+            return deviceId
+        }
+        if let deviceId = KeychainUtil.read(Const.KEY_DEVICE_ID){
+            Const.mDeviceId = deviceId
+            return deviceId
+        }
+        let deviceId = (UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString).md5
+        KeychainUtil.write(deviceId, Const.KEY_DEVICE_ID)
+        Const.mDeviceId = deviceId
+        return deviceId
     }
 
     ///整数版本号
