@@ -90,7 +90,7 @@ struct MusicInfoPage: View {
 
                     //下载完成之后可以通过隔空投送、其他App发送歌曲文件,服务器不允许发送时不显示
                     if self.config.allowSendMusic && !self.vm.sendableFiles.isEmpty{
-                        SettingButton("发送歌曲文件", tip: "隔空投送、其他App"){
+                        SettingButton("发送歌曲文件", tip: "隔空投送等"){
                             if self.vm.sendableFiles.count == 1{
                                 self.vm.onSendFileClick(self.vm.sendableFiles[0])
                             } else {

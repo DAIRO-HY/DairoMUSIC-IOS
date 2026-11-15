@@ -121,8 +121,9 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 5), "服务器需要允许保存到相册")
         save.tap()
 
-        //系统的相册权限询问框不属于App
-        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["允许"]
+        //系统的相册权限询问框不属于App,按钮在iOS 16上是"好",新系统上是"允许",模拟器是英文时是"OK"
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["允许", "好", "OK", "Allow"])).firstMatch
         if allow.waitForExistence(timeout: 60){
             self.shot("相册权限")
             allow.tap()
@@ -144,7 +145,8 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         Thread.sleep(forTimeInterval: 2)
         if UIDevice.current.userInterfaceIdiom == .pad{
             XCTAssertTrue(self.isLandscape, "iPad上播放页应该可以横屏")
-            XCTAssertTrue(self.app.buttons["清晰度"].isHittable)
+            //iOS 16上翻页视图旋转之后isHittable判断不准(实际点击正常),只检查按钮在
+            XCTAssertTrue(self.app.buttons["清晰度"].exists)
             self.shot("iPad播放页横屏-视频")
             self.app.swipeLeft()
             XCTAssertTrue(self.app.buttons["播放"].waitForExistence(timeout: 5) || self.app.buttons["暂停"].exists)

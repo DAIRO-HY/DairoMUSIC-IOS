@@ -158,6 +158,16 @@ class VideoPlayerState: ObservableObject {
         player.play()
     }
 
+    /// 从头重新播放,播放结束之后调用
+    /// 不能用playOrPause:播放结束的通知可能比播放状态的变化先到(iOS 16),这时还是播放状态,会变成暂停
+    func replay() {
+        guard let player = self.player else{
+            return
+        }
+        player.seek(to: .zero)
+        player.play()
+    }
+
     /// 跳到指定位置(秒),跳转完成之前不更新进度,避免进度条跳回原来的位置
     func seek(_ time: Double) {
         guard let player = self.player else{

@@ -455,7 +455,7 @@ class VideoViewModel: ObservableObject {
     /// 播放结束:单曲循环时重新播放,其他按播放顺序播放下一个视频,播放列表里没有其他视频时重新播放
     private func onEnded() {
         if PlayerManager.shared.orderType == .ONE_LOOP || !self.playNext(){
-            self.state.playOrPause()
+            self.state.replay()
         }
     }
 

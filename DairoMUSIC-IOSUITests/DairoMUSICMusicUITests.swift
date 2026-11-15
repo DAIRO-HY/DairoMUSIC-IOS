@@ -56,8 +56,8 @@ final class DairoMUSICMusicUITests: DairoUITestCase {
         self.hittableButton("播放列表").tap()
         XCTAssertTrue(self.app.navigationBars["播放列表(3)"].waitForExistence(timeout: 5))
         self.shot("播放列表")
-        self.dismissSheet()
-        self.app.buttons["关闭"].tap()
+        self.dismissSheet(navigationBar: "播放列表(3)")
+        self.closePlayingPage()
 
         //返回首页,搜索
         self.app.navigationBars.buttons.element(boundBy: 0).tap()

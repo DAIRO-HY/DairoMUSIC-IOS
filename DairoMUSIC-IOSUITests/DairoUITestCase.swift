@@ -121,6 +121,17 @@ class DairoUITestCase: XCTestCase {
         }
     }
 
+    /// 关闭半屏弹窗:iPhone上按住弹窗的标题栏拖到屏幕底部,iPad上点弹窗外面
+    /// iOS 16上从屏幕中间swipeDown关不掉半屏弹窗,要像手指一样从标题栏拖下去
+    func dismissSheet(navigationBar title: String) {
+        if UIDevice.current.userInterfaceIdiom == .pad{
+            self.dismissSheet()
+            return
+        }
+        let start = self.app.navigationBars[title].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+        start.press(forDuration: 0.1, thenDragTo: self.app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+    }
+
     /// 打开播放页面,从歌单、搜索结果点击歌曲之后已经自动打开时不处理,其他时候点击迷你播放条打开
     func openPlayingPage() {
         if self.app.buttons["关闭"].waitForExistence(timeout: 2){

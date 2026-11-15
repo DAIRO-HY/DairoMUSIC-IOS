@@ -42,7 +42,7 @@ struct ProfilePage: View {
                     } else if self.vm.user != nil{
 
                         //临时会员和后台创建的只有用户名的会员都可以绑定邮箱
-                        SettingNavigationLink("绑定邮箱",tip: self.vm.user?.isTemp == true ? "绑定之后可以用邮箱登录" : "忘记密码时可以用邮箱找回"){
+                        SettingNavigationLink("绑定邮箱",tip: self.vm.user?.isTemp == true ? "可用邮箱登录" : "用于找回密码"){
                             EmailCodePage(.bindEmail).anyView
                         }
                     }
