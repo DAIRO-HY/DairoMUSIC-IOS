@@ -41,10 +41,14 @@ class MineViewModel: ObservableObject {
     }
 
     /// 修改播放音质,歌曲里有所有音质的文件,每首歌开始播放前按设置选择,不用重新获取歌单
+    /// 非VIP只能选标准音质,不保存,保留自己设置的音质,开通VIP之后恢复
     func onBitRateChange(_ bitRate: Int) -> Bool{
-        if bitRate > SettingStore.BIT_RATE_STANDARD && ServerConfig.shared.isVipLimited{
-            Toast.show("超高品质、无损音质需要VIP")
-            return false
+        if ServerConfig.shared.isVipLimited{
+            if bitRate > SettingStore.BIT_RATE_STANDARD{
+                Toast.show("超高品质、无损音质需要VIP")
+                return false
+            }
+            return true
         }
         SettingStore.bitRate = bitRate
         return true

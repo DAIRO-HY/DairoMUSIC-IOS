@@ -28,6 +28,17 @@ struct MinePage: View {
         ]
     }
 
+    /// 选中的播放音质,非VIP只能听标准音质,显示标准;自己设置的音质保留,开通VIP之后恢复显示
+    private var bitRateValue: Binding<Int> {
+        return Binding(get: {
+            self.config.isVipLimited ? SettingStore.BIT_RATE_STANDARD : self.vm.bitRate
+        }, set: {
+            if !self.config.isVipLimited{
+                self.vm.bitRate = $0
+            }
+        })
+    }
+
     /// VIP状态
     @ObservedObject private var config = ServerConfig.shared
 
@@ -100,7 +111,7 @@ struct MinePage: View {
                         }
                     }
                     SettingGroup{
-                        SettingPicker("播放音质",data: self.bitRateData, value: self.$vm.bitRate, changeFunc: self.vm.onBitRateChange)
+                        SettingPicker("播放音质",data: self.bitRateData, value: self.bitRateValue, changeFunc: self.vm.onBitRateChange)
                             .icon("waveform", backgroundColor: Color.theme)
                         SettingNavigationLink("缓存管理",tip: "歌曲、视频和图片缓存"){
                             CachePage().anyView
