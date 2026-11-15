@@ -25,6 +25,9 @@ struct MusicInfoPage: View {
     /// 显示删除下载的确认(只下载了一种音质时)
     @State private var showDeleteDownloadAlert = false
 
+    /// 显示发送哪种音质的选择(下载了多种音质时)
+    @State private var showSendFilePicker = false
+
     /// 显示删除哪种音质的选择(下载了多种音质时)
     @State private var showDeleteDownloadPicker = false
 
@@ -83,6 +86,18 @@ struct MusicInfoPage: View {
                             }
                         }
                         .icon("arrow.down.circle.fill", backgroundColor: .green)
+                    }
+
+                    //下载完成之后可以通过隔空投送、其他App发送歌曲文件,服务器不允许发送时不显示
+                    if self.config.allowSendMusic && !self.vm.sendableFiles.isEmpty{
+                        SettingButton("发送歌曲文件", tip: "隔空投送、其他App"){
+                            if self.vm.sendableFiles.count == 1{
+                                self.vm.onSendFileClick(self.vm.sendableFiles[0])
+                            } else {
+                                self.showSendFilePicker = true
+                            }
+                        }
+                        .icon("paperplane.fill", backgroundColor: .orange)
                     }
 
                     //已经下载的可以删除,不允许下载时也可以删除
@@ -150,6 +165,14 @@ struct MusicInfoPage: View {
             Button("取消", role: .cancel){}
         } message: {
             Text(self.vm.downloads.first.map{ self.vm.downloadLabel($0) } ?? "")
+        }
+        .confirmationDialog("选择发送的音质", isPresented: self.$showSendFilePicker, titleVisibility: .visible){
+            ForEach(self.vm.sendableFiles, id: \.id){ info in
+                Button(self.vm.downloadLabel(info)){
+                    self.vm.onSendFileClick(info)
+                }
+            }
+            Button("取消", role: .cancel){}
         }
         .confirmationDialog("删除下载", isPresented: self.$showDeleteDownloadPicker, titleVisibility: .visible){
             ForEach(self.vm.downloads, id: \.id){ info in

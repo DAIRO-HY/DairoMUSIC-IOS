@@ -22,6 +22,9 @@ class ServerConfig: ObservableObject {
     /// 是否允许下载歌曲
     @Published private(set) var allowDownloadMusic = false
 
+    /// 是否允许发送下载的歌曲文件,不允许下载歌曲时服务器固定返回false
+    @Published private(set) var allowSendMusic = false
+
     /// 服务器是否开启了视频采集,获取到配置之前按开启处理
     @Published private(set) var videoEnable = true
 
@@ -77,6 +80,7 @@ class ServerConfig: ObservableObject {
             self?.allowDownloadVideo = config.allowDownloadVideo
             self?.allowSaveAlbum = config.allowSaveAlbum
             self?.allowDownloadMusic = config.allowDownloadMusic
+            self?.allowSendMusic = config.allowSendMusic
             self?.videoEnable = config.videoEnable
         }
     }

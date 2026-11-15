@@ -18,6 +18,9 @@ struct ConfigModel: Codable {
     /// 是否允许下载歌曲
     var allowDownloadMusic: Bool
 
+    /// 是否允许把下载的歌曲文件通过隔空投送、其他App发送出去,不允许下载歌曲时服务器固定返回false
+    var allowSendMusic: Bool
+
     /// 服务器是否开启了视频采集,没有开启时不会采集、转码新的视频
     var videoEnable: Bool
 }
