@@ -343,6 +343,17 @@ enum FileSdkUtil {
         _ = try? FileSdkUtil.get().clearCache(group: group, beforeAccess: nil)
     }
 
+    /// 缓存保存期限的默认值(天),和SDK的默认值一样
+    static let DEFAULT_CACHE_EXPIRE_DAYS = 90
+
+    /**
+     设置缓存保存期限,超过期限没有访问的缓存由SDK定期清理,下载的文件不会被清理
+     - Parameter days: 天数,0表示永久
+     */
+    static func setCacheExpireDays(_ days: Int) {
+        try? FileSdkUtil.get().setCacheExpireDays(days: UInt32(days))
+    }
+
     /**
      设置缓存容量上限,超过之后自动清理最久没有使用的缓存
      - Parameter mb: 容量上限(MB),0表示不限制

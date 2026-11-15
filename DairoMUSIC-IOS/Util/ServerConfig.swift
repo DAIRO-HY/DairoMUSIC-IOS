@@ -13,17 +13,11 @@ class ServerConfig: ObservableObject {
 
     static let shared = ServerConfig()
 
-    /// 是否允许下载视频
-    @Published private(set) var allowDownloadVideo = false
-
-    /// 是否允许把下载的视频保存到相册,允许下载视频时才有效
+    /// 是否允许把下载的视频保存到相册,不允许时不显示入口;VIP功能生效时只有VIP才能用
     @Published private(set) var allowSaveAlbum = false
 
-    /// 是否允许下载歌曲
-    @Published private(set) var allowDownloadMusic = false
-
-    /// 是否允许发送下载的歌曲文件,不允许下载歌曲时服务器固定返回false
-    @Published private(set) var allowSendMusic = false
+    /// 是否允许发送下载的歌曲、视频文件,不允许时不显示入口;VIP功能生效时只有VIP才能用
+    @Published private(set) var allowSendFile = false
 
     /// 服务器是否开启了视频采集,获取到配置之前按开启处理
     @Published private(set) var videoEnable = true
@@ -40,7 +34,7 @@ class ServerConfig: ObservableObject {
         return self.vip?.enable == true
     }
 
-    /// 是否受非VIP的限制:只能听标准音质、看流畅版视频,不能下载
+    /// 是否受非VIP的限制:只能听、下载标准音质和流畅版视频,不能发送文件、保存到相册
     var isVipLimited: Bool {
         guard let vip = self.vip else{
             return false
@@ -48,11 +42,12 @@ class ServerConfig: ObservableObject {
         return vip.enable && !vip.isVip
     }
 
-    /// 点击下载时检查VIP:服务器允许下载时显示下载按钮,非VIP点击时提示需要开通VIP
-    /// - Returns: 是否可以下载
-    func checkDownloadVip() -> Bool {
+    /// 文件出App(发送文件、保存到相册)是VIP特权,非VIP点击时提示需要开通VIP
+    /// - Parameter action: 提示里的操作名称,例如"发送文件"
+    /// - Returns: 是否可以继续
+    func checkFileOutVip(_ action: String) -> Bool {
         if self.isVipLimited{
-            Toast.show("下载需要开通VIP")
+            Toast.show(action + "需要开通VIP")
             return false
         }
         return true
@@ -77,10 +72,8 @@ class ServerConfig: ObservableObject {
         CommonApi.config().hide().fail{ _ in
         }.error{ _ in
         }.send{ [weak self] config in
-            self?.allowDownloadVideo = config.allowDownloadVideo
             self?.allowSaveAlbum = config.allowSaveAlbum
-            self?.allowDownloadMusic = config.allowDownloadMusic
-            self?.allowSendMusic = config.allowSendMusic
+            self?.allowSendFile = config.allowSendFile
             self?.videoEnable = config.videoEnable
         }
     }

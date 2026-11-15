@@ -53,7 +53,9 @@ struct CachePage: View {
                     }
                     .icon("photo.fill", backgroundColor: Color.blue)
                 }
-                SettingGroup(footer: "超过上限时自动清理最久没有播放的歌曲"){
+                SettingGroup(footer: "超过保存期限没有播放的缓存会定期清理,超过上限时清理最久没有播放的缓存;下载的歌曲和视频不会被清理"){
+                    SettingPicker("缓存保存期限", data: CacheViewModel.EXPIRE_DAYS_DATA, value: self.$vm.expireDays, changeFunc: self.vm.onExpireDaysChange)
+                        .icon("timer", backgroundColor: Color.orange)
                     SettingPicker("缓存上限", data: CacheViewModel.MAX_SIZE_DATA, value: self.$vm.maxSize, changeFunc: self.vm.onMaxSizeChange)
                         .icon("internaldrive.fill", backgroundColor: Color.indigo)
                 }
@@ -101,6 +103,16 @@ class CacheViewModel: ObservableObject {
         SettingPickerData("不限制", 0)
     ]
 
+    /// 缓存保存期限的选项(天),0表示永久
+    static let EXPIRE_DAYS_DATA = [
+        SettingPickerData("1星期", 7),
+        SettingPickerData("1个月(30天)", 30),
+        SettingPickerData("3个月(90天)", 90),
+        SettingPickerData("6个月(180天)", 180),
+        SettingPickerData("1年(365天)", 365),
+        SettingPickerData("永久", 0)
+    ]
+
     /// 歌曲缓存大小
     @Published var musicSize = "计算中"
 
@@ -118,6 +130,9 @@ class CacheViewModel: ObservableObject {
 
     /// 缓存上限(MB)
     @Published var maxSize = SettingStore.fileSdkMaxCacheSize
+
+    /// 缓存保存期限(天),没有设置过时是SDK的默认值90天
+    @Published var expireDays = SettingStore.fileSdkCacheExpireDays ?? FileSdkUtil.DEFAULT_CACHE_EXPIRE_DAYS
 
     /// 统计缓存和下载的大小,页面显示时刷新,从下载列表删除之后回来会更新
     func loadSize(){
@@ -164,6 +179,13 @@ class CacheViewModel: ObservableObject {
                 self.loadSize()
             }
         }
+    }
+
+    /// 修改缓存保存期限
+    func onExpireDaysChange(_ value: Int) -> Bool{
+        SettingStore.fileSdkCacheExpireDays = value
+        FileSdkUtil.setCacheExpireDays(value)
+        return true
     }
 
     /// 修改缓存上限

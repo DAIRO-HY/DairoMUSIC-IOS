@@ -9,17 +9,11 @@ struct ConfigModel: Codable {
     /// 是否开放注册,关闭时隐藏注册和免注册使用
     var allowRegister: Bool
 
-    /// 是否允许下载视频,不允许时隐藏视频的下载按钮
-    var allowDownloadVideo: Bool
-
-    /// 是否允许把下载的视频保存到相册,允许下载视频时才有效
+    /// 是否允许把下载的视频保存到相册,VIP功能生效时只有VIP才能用
     var allowSaveAlbum: Bool
 
-    /// 是否允许下载歌曲
-    var allowDownloadMusic: Bool
-
-    /// 是否允许把下载的歌曲文件通过隔空投送、其他App发送出去,不允许下载歌曲时服务器固定返回false
-    var allowSendMusic: Bool
+    /// 是否允许把下载的歌曲、视频文件通过隔空投送、其他App发送出去,VIP功能生效时只有VIP才能用
+    var allowSendFile: Bool
 
     /// 服务器是否开启了视频采集,没有开启时不会采集、转码新的视频
     var videoEnable: Bool

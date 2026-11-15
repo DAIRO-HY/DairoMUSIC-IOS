@@ -165,54 +165,23 @@ class MusicInfoViewModel: ObservableObject {
             guard let url = URL(string: SettingStore.domainNotNull + ApiConst.SHARE_MUSIC + "?id=\(musicId)") else{
                 return
             }
-            MusicInfoViewModel.presentShare([url])
+            ShareUtil.present([url])
         }
     }
 
-    /// 已经下载完成、可以发送的歌曲文件
-    var sendableFiles: [CacheInfo] {
-        return self.downloads.filter{ $0.state == .finish && $0.path != nil }
+    /// 要发送的歌曲文件:下载完成的文件,下载了多种音质时发送最高音质的
+    var sendFile: (info: CacheInfo, file: MusicFileModel?)? {
+        let files = self.downloads.filter{ $0.state == .finish && $0.path != nil }.map{ info in
+            (info: info, file: FileSdkUtil.musicFileId(info.key).flatMap{ self.music.file(id: $0) })
+        }
+        return files.max{ ($0.file?.bitRate ?? 0) < ($1.file?.bitRate ?? 0) }
     }
 
-    /// 通过隔空投送、其他App发送下载的歌曲文件
-    /// 缓存里的文件名不是歌名,先复制到临时目录,改成"歌名 - 歌手.扩展名"再发送
-    func onSendFileClick(_ info: CacheInfo){
-        guard let path = info.path else{
+    /// 通过隔空投送、其他App发送下载的歌曲文件,VIP功能生效时只有VIP才能发送
+    func onSendFileClick(){
+        guard let send = self.sendFile, let path = send.info.path, ServerConfig.shared.checkFileOutVip("发送文件") else{
             return
         }
-        let source = URL(fileURLWithPath: path)
-        let file = FileSdkUtil.musicFileId(info.key).flatMap{ self.music.file(id: $0) }
-        let ext = file?.format ?? source.pathExtension
-        let name = (self.music.nameText + " - " + self.music.artistText).replacingOccurrences(of: "/", with: "_")
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("send_music")
-        let target = folder.appendingPathComponent(ext.isEmpty ? name : name + "." + ext)
-        do{
-            //只保留这次要发送的文件
-            try? FileManager.default.removeItem(at: folder)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: source, to: target)
-        } catch {
-            Toast.show("读取歌曲文件失败")
-            return
-        }
-        MusicInfoViewModel.presentShare([target])
-    }
-
-    /// 弹出系统的分享面板
-    private static func presentShare(_ items: [Any]){
-        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-              var top = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else{
-            return
-        }
-        while let presented = top.presentedViewController{
-            top = presented
-        }
-
-        //iPad上以气泡形式显示在页面中间
-        vc.popoverPresentationController?.sourceView = top.view
-        vc.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
-        vc.popoverPresentationController?.permittedArrowDirections = []
-        top.present(vc, animated: true)
+        ShareUtil.sendFile(path, name: self.music.nameText + " - " + self.music.artistText, ext: send.file?.format)
     }
 }

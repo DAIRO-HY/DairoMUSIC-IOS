@@ -53,6 +53,11 @@ extension MusicModel {
         return ServerConfig.shared.isVipLimited ? Array(files.prefix(1)) : files
     }
 
+    /// 下载选项里列出的文件:有播放地址的,和非VIP时只有VIP才能下载的(显示VIP标记),按音质从低到高排序
+    var downloadFiles: [MusicFileModel] {
+        return (self.files ?? []).filter{ $0.url != nil || $0.vipOnly == true }.sorted{ ($0.bitRate ?? 0) < ($1.bitRate ?? 0) }
+    }
+
     /// 按目标音质选择歌曲文件:不超过目标音质的最高音质,所有文件都超过时选最低音质
     func file(bitRate target: Int) -> MusicFileModel? {
         let files = self.playableFiles

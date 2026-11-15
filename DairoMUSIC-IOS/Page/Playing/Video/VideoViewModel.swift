@@ -64,8 +64,8 @@ class VideoViewModel: ObservableObject {
     /// 下载进度(0到100),没有下载时为nil
     @Published private(set) var downloadPercent: Int?
 
-    /// 显示"是否保存到相册?"
-    @Published var showSaveAlbumConfirm = false
+    /// 显示下载的选项:只下载、保存到相册、发送文件
+    @Published var showDownloadMenu = false
 
     /// 当前播放的视频
     private var source: FileSource?
@@ -101,24 +101,29 @@ class VideoViewModel: ObservableObject {
     /// 监听服务器配置,不能放在cancellables里,停止播放时会清空cancellables
     private var configCancellables = Set<AnyCancellable>()
 
-    /// 是否允许下载视频,服务器的设置,不允许时不显示下载按钮;非VIP点击时提示需要开通VIP
-    var allowDownload: Bool {
-        return ServerConfig.shared.allowDownloadVideo
-    }
-
     /// 原画是否只有VIP才能看,清晰度选项上显示VIP标记
     var isOriginalVipOnly: Bool {
         return ServerConfig.shared.isVipLimited
     }
 
-    /// 是否允许保存到相册,服务器的设置
+    /// 是否显示"保存到相册",服务器的设置;非VIP显示VIP标记,点击时提示需要VIP
     var allowSaveAlbum: Bool {
         return ServerConfig.shared.allowSaveAlbum
     }
 
-    /// 是否可以点击下载按钮,已经下载时只有允许保存到相册才可以再点
+    /// 是否显示"发送文件",服务器的设置;非VIP显示VIP标记,点击时提示需要VIP
+    var allowSendFile: Bool {
+        return ServerConfig.shared.allowSendFile
+    }
+
+    /// 保存到相册、发送文件是否只有VIP才能用,选项上显示VIP标记
+    var isFileOutVipOnly: Bool {
+        return ServerConfig.shared.isVipLimited
+    }
+
+    /// 是否可以点击下载按钮,已经下载时可以保存到相册或者发送文件才可以再点
     var canDownload: Bool {
-        return self.source != nil && self.downloadPercent == nil && (!self.isDownloaded || self.allowSaveAlbum)
+        return self.source != nil && self.downloadPercent == nil && (!self.isDownloaded || self.allowSaveAlbum || self.allowSendFile)
     }
 
     /*----------------------------------------------------------------------------------*/
@@ -480,23 +485,32 @@ class VideoViewModel: ObservableObject {
 
     /*----------------------------------------------------------------------------------*/
 
-    /// 下载按钮点击事件,允许保存到相册时先询问
+    /// 下载按钮点击事件:可以保存到相册或者发送文件时先选择,否则直接下载
     func onDownloadClick() {
+        if self.allowSaveAlbum || self.allowSendFile{
+            self.showDownloadMenu = true
+            return
+        }
+        self.onDownloadAction(nil)
+    }
 
-        //已经下载的(VIP到期之前下载的)还可以保存到相册
-        if !self.isDownloaded && !ServerConfig.shared.checkDownloadVip(){
+    /// 选择下载的选项:没有下载时先下载当前清晰度的视频,下载完成之后保存到相册或者发送文件
+    /// 保存到相册、发送文件是VIP特权,非VIP提示需要VIP,也不下载
+    /// - Parameter action: 下载之后的操作,为nil时只下载
+    func onDownloadAction(_ action: VideoFileAction?) {
+        if let action, !ServerConfig.shared.checkFileOutVip(action.title){
             return
         }
-        if self.allowSaveAlbum{
-            self.showSaveAlbumConfirm = true
+        if self.isDownloaded, let action, let source = self.source, let path = FileSdkUtil.cachedPath(source){
+            self.perform(action, path: path)
             return
         }
-        self.download(saveAlbum: false)
+        self.download(then: action)
     }
 
     /// 下载当前清晰度的视频,已经缓存好的直接转为下载,不会重新下载
-    /// - Parameter saveAlbum: 下载完成之后是否保存到相册
-    func download(saveAlbum: Bool) {
+    /// - Parameter action: 下载完成之后的操作,为nil时只下载
+    private func download(then action: VideoFileAction?) {
         guard let source = self.source else{
             return
         }
@@ -510,12 +524,23 @@ class VideoViewModel: ObservableObject {
                 return
             }
             self?.isDownloaded = true
-            if saveAlbum{
-                VideoViewModel.saveToAlbum(path)
+            if let action{
+                self?.perform(action, path: path)
             } else {
                 Toast.show("下载完成")
             }
         })
+    }
+
+    /// 对下载好的视频文件执行保存到相册或者发送
+    private func perform(_ action: VideoFileAction, path: String) {
+        switch action {
+        case .saveAlbum:
+            VideoViewModel.saveToAlbum(path)
+        case .send:
+            let name = self.music.map{ $0.nameText + " - " + $0.artistText } ?? "视频"
+            ShareUtil.sendFile(path, name: name, ext: nil)
+        }
     }
 
     /// 保存到相册,只需要添加照片的权限
@@ -534,6 +559,26 @@ class VideoViewModel: ObservableObject {
                     Toast.show(success ? "已保存到相册" : "保存到相册失败:" + (error?.localizedDescription ?? ""))
                 }
             }
+        }
+    }
+}
+
+/// 视频下载之后的操作
+enum VideoFileAction {
+
+    /// 保存到相册
+    case saveAlbum
+
+    /// 通过隔空投送、其他App发送文件
+    case send
+
+    /// 操作名称,用在需要VIP的提示里
+    var title: String {
+        switch self {
+        case .saveAlbum:
+            return "保存到相册"
+        case .send:
+            return "发送文件"
         }
     }
 }

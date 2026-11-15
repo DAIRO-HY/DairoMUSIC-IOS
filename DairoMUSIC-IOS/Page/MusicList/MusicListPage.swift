@@ -27,7 +27,7 @@ struct MusicListPage: View {
     /// 显示全部下载的音质选择
     @State private var showDownloadPicker = false
 
-    /// 服务器配置,不允许下载歌曲时不显示全部下载按钮
+    /// VIP状态,变化时刷新下载音质选项上的VIP标记
     @ObservedObject private var config = ServerConfig.shared
 
     init(favoriteId: Int64, name: String) {
@@ -98,7 +98,7 @@ struct MusicListPage: View {
             }
         }
         .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
-            ForEach(MusicDownloadUtil.QUALITIES, id: \.self){ quality in
+            ForEach(MusicDownloadUtil.listQualities, id: \.self){ quality in
                 Button(quality.label){
                     MusicDownloadUtil.downloadAll(self.vm.musicList, quality: quality)
                 }
@@ -139,11 +139,9 @@ struct MusicListPage: View {
                 HStack{
                     Text("\(self.vm.musicList.count)首").font(.footnote).foregroundColor(.secondary)
                     Spacer()
-                    if self.config.allowDownloadMusic && !self.vm.musicList.isEmpty{
+                    if !self.vm.musicList.isEmpty{
                         Button(action: {
-                            if self.config.checkDownloadVip(){
-                                self.showDownloadPicker = true
-                            }
+                            self.showDownloadPicker = true
                         }){
                             Label("全部下载", systemImage: "arrow.down.circle")
                                 .font(.footnote)

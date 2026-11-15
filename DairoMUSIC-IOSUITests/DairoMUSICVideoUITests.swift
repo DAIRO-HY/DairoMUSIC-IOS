@@ -46,7 +46,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         Thread.sleep(forTimeInterval: 3)
         self.shot("原画")
 
-        //下载当前清晰度,服务器允许保存到相册时会先询问
+        //下载当前清晰度,服务器允许保存到相册或者发送文件时会先选择
         self.app.buttons["下载"].tap()
         let onlyDownload = self.app.buttons["只下载"]
         if onlyDownload.waitForExistence(timeout: 3){
@@ -298,33 +298,20 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         self.closeVideoAndLogout()
     }
 
-    /// 服务器不允许保存到相册时,下载不询问,下载完成之后不能再点下载
-    /// 服务器允许保存到相册时跳过
+    /// 服务器不允许保存到相册、发送文件时,下载不询问,下载完成之后不能再点下载
+    /// 服务器允许保存到相册或者发送文件时跳过
     @MainActor
     func testNoSaveAlbum() throws {
         let config = self.getJson("/api/common/config")
-        try XCTSkipIf(config?["allowSaveAlbum"] as? Bool != false, "服务器允许保存到相册,跳过")
+        try XCTSkipIf(config?["allowSaveAlbum"] as? Bool != false || config?["allowSendFile"] as? Bool != false, "服务器允许保存到相册或者发送文件,跳过")
         self.loginTemp()
         self.openVideo("稻香", "稻香 周杰伦")
         self.app.buttons["下载"].tap()
         XCTAssertFalse(self.app.buttons["下载并保存到相册"].waitForExistence(timeout: 3), "不允许保存到相册时不应该询问")
         let downloaded = self.app.buttons["已下载"]
         XCTAssertTrue(downloaded.waitForExistence(timeout: 120))
-        XCTAssertFalse(downloaded.isEnabled, "已经下载并且不允许保存到相册时不能再点")
+        XCTAssertFalse(downloaded.isEnabled, "已经下载并且不允许保存到相册、发送文件时不能再点")
         self.shot("不允许保存到相册")
-        self.closeVideoAndLogout()
-    }
-
-    /// 服务器不允许下载视频时不显示下载按钮,服务器允许下载视频时跳过
-    @MainActor
-    func testNoDownloadVideo() throws {
-        let config = self.getJson("/api/common/config")
-        try XCTSkipIf(config?["allowDownloadVideo"] as? Bool != false, "服务器允许下载视频,跳过")
-        self.loginTemp()
-        self.openVideo("稻香", "稻香 周杰伦")
-        XCTAssertTrue(self.app.buttons["清晰度"].exists)
-        XCTAssertFalse(self.app.buttons.matching(NSPredicate(format: "label IN %@", ["下载", "已下载"])).firstMatch.exists, "不允许下载视频时不显示下载按钮")
-        self.shot("不允许下载视频")
         self.closeVideoAndLogout()
     }
 

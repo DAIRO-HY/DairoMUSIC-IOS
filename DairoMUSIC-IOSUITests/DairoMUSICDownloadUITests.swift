@@ -17,8 +17,6 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
 
     @MainActor
     func testDownload() throws {
-        let config = self.getJson("/api/common/config")
-        try XCTSkipIf(config?["allowDownloadMusic"] as? Bool != true, "服务器不允许下载歌曲,跳过")
         self.loginTemp()
 
         //歌曲信息页下载,选择音质
@@ -129,8 +127,6 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
     /// 歌曲信息页:下载之后当前音质显示下载的文件,删除下载(多种音质时选择删除哪一种)之后按设置的播放音质显示
     @MainActor
     func testDeleteDownload() throws {
-        let config = self.getJson("/api/common/config")
-        try XCTSkipIf(config?["allowDownloadMusic"] as? Bool != true, "服务器不允许下载歌曲,跳过")
         self.loginTemp()
         self.app.buttons["搜索歌曲、歌手"].tap()
         let searchField = self.app.textFields["搜索歌曲、歌手"]
@@ -190,27 +186,6 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
     private func currentQuality() -> String {
         let text = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "当前音质：")).firstMatch
         return text.waitForExistence(timeout: 5) ? text.label : ""
-    }
-
-    /// 服务器不允许下载歌曲时不显示下载按钮,服务器允许下载时跳过
-    @MainActor
-    func testNoDownloadMusic() throws {
-        let config = self.getJson("/api/common/config")
-        try XCTSkipIf(config?["allowDownloadMusic"] as? Bool != false, "服务器允许下载歌曲,跳过")
-        self.loginTemp()
-        let favorite = self.app.buttons["测试推荐·中文"].firstMatch
-        XCTAssertTrue(favorite.waitForExistence(timeout: 10))
-        favorite.tap()
-        XCTAssertTrue(self.app.staticTexts["3首"].waitForExistence(timeout: 10))
-        XCTAssertFalse(self.app.buttons["全部下载"].exists, "不允许下载时不显示全部下载")
-        self.app.cells.containing(.staticText, identifier: "海风").firstMatch.buttons["更多操作"].tap()
-        XCTAssertTrue(self.app.buttons["分享"].waitForExistence(timeout: 5))
-        XCTAssertFalse(self.app.button(startsWith: "下载").exists, "不允许下载时歌曲信息页不显示下载")
-        self.shot("不允许下载")
-        self.dismissSheet()
-        self.back()
-        self.app.buttons["我的"].tap()
-        self.logout()
     }
 
     /// 等列表变成指定的行数

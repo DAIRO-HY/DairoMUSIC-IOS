@@ -17,25 +17,41 @@ struct DownloadQuality: Hashable {
 
     /// 目标音质,从歌曲的所有音质里选择不超过这个音质的最高音质文件
     let bitRate: Int
+
+    /// 是否只有VIP才能下载,非VIP选择时提示需要VIP
+    let vipOnly: Bool
 }
 
 /// 歌曲下载,下载的文件通过SDK永久保存,下载进度在缓存管理的"已下载的歌曲"里查看
 enum MusicDownloadUtil {
 
-    /// 歌单全部下载时的音质选项
-    static let QUALITIES = [
-        DownloadQuality(label: "标准(128K)", bitRate: 128),
-        DownloadQuality(label: "超高品质(320K)", bitRate: 320),
-        DownloadQuality(label: "无损", bitRate: SettingStore.BIT_RATE_LOSSLESS)
-    ]
+    /// 非VIP选择VIP音质时的提示
+    private static let VIP_TIP = "超高品质、无损音质需要VIP"
 
-    /// 一首歌可以下载的音质,列出这首歌所有音质的文件和大小;还没有入库的采集平台歌曲不知道有哪些音质,显示通用的选项
+    /// 歌单全部下载时的音质选项,非VIP只能下载标准音质,其他音质显示VIP标记
+    static var listQualities: [DownloadQuality] {
+        let vip = ServerConfig.shared.isVipLimited
+        let mark = vip ? "(VIP)" : ""
+        return [
+            DownloadQuality(label: "标准(128K)", bitRate: SettingStore.BIT_RATE_STANDARD, vipOnly: false),
+            DownloadQuality(label: "超高品质(320K)" + mark, bitRate: 320, vipOnly: vip),
+            DownloadQuality(label: "无损" + mark, bitRate: SettingStore.BIT_RATE_LOSSLESS, vipOnly: vip)
+        ]
+    }
+
+    /// 一首歌可以下载的音质,列出这首歌所有音质的文件和大小,非VIP不能下载的音质显示VIP标记
+    /// 还没有入库的采集平台歌曲不知道有哪些音质,显示通用的选项
     static func qualities(_ music: MusicModel) -> [DownloadQuality] {
-        let files = music.playableFiles
+        let files = music.downloadFiles
         if files.isEmpty{
-            return MusicDownloadUtil.QUALITIES
+            return MusicDownloadUtil.listQualities
         }
-        return files.map{ DownloadQuality(label: MusicModel.qualityText($0.bitRate) + "  " + $0.size.fileSize, bitRate: $0.bitRate ?? 0) }
+        let playable = Set(music.playableFiles.map{ $0.id })
+        return files.map{
+            let vipOnly = !playable.contains($0.id)
+            return DownloadQuality(label: MusicModel.qualityText($0.bitRate) + (vipOnly ? "(VIP)" : "") + "  " + $0.size.fileSize,
+                                   bitRate: $0.bitRate ?? 0, vipOnly: vipOnly)
+        }
     }
 
     /// 下载状态:已下载、下载中,没有下载时返回nil
@@ -58,6 +74,10 @@ enum MusicDownloadUtil {
 
     /// 下载一首歌,还没有入库的歌曲先收藏到曲库,再获取歌曲的所有音质
     static func download(_ music: MusicModel, quality: DownloadQuality) {
+        if quality.vipOnly{
+            Toast.show(MusicDownloadUtil.VIP_TIP)
+            return
+        }
         if music.id != 0 && music.hasFile{
             MusicDownloadUtil.add(music, quality: quality)
             return
@@ -80,6 +100,10 @@ enum MusicDownloadUtil {
 
     /// 下载列表里的所有歌曲,每首歌选择不超过目标音质的最高音质文件,还没有入库或者还没有文件的歌曲跳过
     static func downloadAll(_ musicList: [MusicModel], quality: DownloadQuality) {
+        if quality.vipOnly{
+            Toast.show(MusicDownloadUtil.VIP_TIP)
+            return
+        }
         var count = 0
         for music in musicList where music.id != 0{
             guard let file = music.file(bitRate: quality.bitRate), let source = FileSource.music(music, file: file) else{
