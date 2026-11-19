@@ -61,10 +61,10 @@ struct PlayingPage: View {
     @AppStorage(SettingStore.KEY_PLAYING_WAVE_STYLE) private var waveStyle = PlayingWaveStyle.bars.rawValue
 
     /// 是否显示低音冲击波
-    @AppStorage(SettingStore.KEY_PLAYING_WAVE_SHOCKWAVE) private var waveShockwave = false
+    @AppStorage(SettingStore.KEY_PLAYING_WAVE_SHOCKWAVE) private var waveShockwave = true
 
     /// 波形颜色是否跟随封面
-    @AppStorage(SettingStore.KEY_PLAYING_WAVE_COVER_COLOR) private var waveCoverColor = false
+    @AppStorage(SettingStore.KEY_PLAYING_WAVE_COVER_COLOR) private var waveCoverColor = true
 
     /// 页面是否正在显示,不显示时停止背景和波形的动画
     @State private var isVisible = false

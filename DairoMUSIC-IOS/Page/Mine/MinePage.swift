@@ -51,14 +51,7 @@ struct MinePage: View {
     /// 播放页环形波形的样式
     @AppStorage(SettingStore.KEY_PLAYING_WAVE_STYLE) private var waveStyle = PlayingWaveStyle.bars.rawValue
 
-    /// 播放页是否显示低音冲击波
-    @AppStorage(SettingStore.KEY_PLAYING_WAVE_SHOCKWAVE) private var waveShockwave = false
 
-    /// 播放页波形颜色是否跟随封面
-    @AppStorage(SettingStore.KEY_PLAYING_WAVE_COVER_COLOR) private var waveCoverColor = false
-
-    /// 播放页环形波形的样式选项
-    private let waveStyleData = PlayingWaveStyle.allCases.map{ SettingPickerData($0.label, $0.rawValue) }
 
     /// 定时停止播放
     @ObservedObject private var sleepTimer = SleepTimer.shared
@@ -125,14 +118,10 @@ struct MinePage: View {
                     SettingGroup{
                         SettingPicker("播放音质",data: self.bitRateData, value: self.bitRateValue, changeFunc: self.vm.onBitRateChange)
                             .icon("waveform", backgroundColor: Color.theme)
-                        SettingPicker("播放页波形", data: self.waveStyleData, value: self.$waveStyle)
-                            .icon("waveform.circle.fill", backgroundColor: Color.purple)
-
-                        //关闭波形时这两项没有作用,不显示
-                        if self.waveStyle != PlayingWaveStyle.off.rawValue{
-                            SettingToggle(title: "低音冲击波", isOn: self.$waveShockwave)
-                            SettingToggle(title: "波形颜色跟随封面", isOn: self.$waveCoverColor)
+                        SettingNavigationLink("播放页波形", tip: (PlayingWaveStyle(rawValue: self.waveStyle) ?? .bars).label){
+                            PlayingWaveSettingPage().anyView
                         }
+                        .icon("waveform.circle.fill", backgroundColor: Color.purple)
                         SettingNavigationLink("缓存管理",tip: "歌曲、视频和图片缓存"){
                             CachePage().anyView
                         }.icon("internaldrive.fill", backgroundColor: Color.indigo)
