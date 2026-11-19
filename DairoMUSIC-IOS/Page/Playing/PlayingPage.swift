@@ -297,6 +297,16 @@ struct PlayingPage: View {
                 }
                 .accessibilityLabel("关闭")
                 Spacer()
+
+                //歌曲信息
+                Button(action: {
+                    self.infoMusic = self.player.music
+                }){
+                    Image(systemName: "ellipsis")
+                        .font(.title2)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("更多操作")
             }
         }
         .padding(.top, 8)
@@ -324,50 +334,52 @@ struct PlayingPage: View {
 
     /// 歌名、歌手、喜欢和更多按钮
     private var infoBar: some View {
-        HStack(spacing: 12){
-            VStack(alignment: .leading, spacing: 4){
-                Text(self.player.music?.nameText ?? "").font(.title2.bold()).lineLimit(1)
+        VStack(alignment: .leading, spacing: 2){
+
+            //歌名单独一行,长歌名能显示得更完整
+            Text(self.player.music?.nameText ?? "")
+                .font(.title2.bold())
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 12){
                 Text(self.player.collectMsg ?? self.player.music?.artistAlbumText ?? "")
                     .font(.subheadline)
                     .foregroundColor(Color(red: 220 / 255, green: 225 / 255, blue: 1).opacity(0.6))
                     .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                self.infoButtons
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            //离线模式时显示,点击之后可以取消离线模式
-            if self.player.isOffline{
-                Button(action: {
-                    self.showOfflineAlert = true
-                }){
-                    Image(systemName: "wifi.slash")
-                        .font(.title3)
-                        .foregroundColor(.orange)
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("离线模式")
-            }
-            let isLike = self.isLike
-            Button(action: {
-                if let music = self.player.music{
-                    MusicStore.toggleLike(music)
-                }
-            }){
-                Image(systemName: isLike ? "heart.fill" : "heart")
-                    .font(.title2)
-                    .foregroundColor(isLike ? .like : .white)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel(isLike ? "取消喜欢" : "喜欢")
-            Button(action: {
-                self.infoMusic = self.player.music
-            }){
-                Image(systemName: "ellipsis")
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("更多操作")
         }
         .padding(.top)
+    }
+
+    /// 歌手后面的按钮:离线模式、喜欢
+    @ViewBuilder
+    private var infoButtons: some View {
+        //离线模式时显示,点击之后可以取消离线模式
+        if self.player.isOffline{
+            Button(action: {
+                self.showOfflineAlert = true
+            }){
+                Image(systemName: "wifi.slash")
+                    .font(.title3)
+                    .foregroundColor(.orange)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("离线模式")
+        }
+        let isLike = self.isLike
+        Button(action: {
+            if let music = self.player.music{
+                MusicStore.toggleLike(music)
+            }
+        }){
+            Image(systemName: isLike ? "heart.fill" : "heart")
+                .font(.title2)
+                .foregroundColor(isLike ? .like : .white)
+                .frame(width: 44, height: 44)
+        }
+        .accessibilityLabel(isLike ? "取消喜欢" : "喜欢")
     }
 
     /// 是否"我喜欢"的歌曲
