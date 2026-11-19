@@ -57,17 +57,26 @@ struct PlayingPage: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    /// 封面页环形波形的样式,在"我的"页面设置
+    @AppStorage(SettingStore.KEY_PLAYING_WAVE_STYLE) private var waveStyle = PlayingWaveStyle.bars.rawValue
+
+    /// 是否显示低音冲击波
+    @AppStorage(SettingStore.KEY_PLAYING_WAVE_SHOCKWAVE) private var waveShockwave = false
+
+    /// 波形颜色是否跟随封面
+    @AppStorage(SettingStore.KEY_PLAYING_WAVE_COVER_COLOR) private var waveCoverColor = false
+
+    /// 页面是否正在显示,不显示时停止背景和波形的动画
+    @State private var isVisible = false
+
+    /// App是否在前台,在后台时停止背景和波形的动画
+    /// 弹出的页面里scenePhase不准(一直是background),直接用系统通知
+    @State private var isAppActive = UIApplication.shared.applicationState == .active
+
     var body: some View {
         ZStack{
-
-            //模糊的封面作为背景
-            GeometryReader{ geo in
-                MusicImage(self.player.music?.logo)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .blur(radius: 40)
-                    .overlay(Color.black.opacity(0.45))
-            }
-            .ignoresSafeArea()
+            self.background
+            PlayingStarsView(isActive: self.isAnimating).ignoresSafeArea()
             GeometryReader{ geo in
                 let isLandscape = geo.size.width > geo.size.height
 
@@ -188,11 +197,61 @@ struct PlayingPage: View {
                 self.videoVm.pause()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)){ _ in
+            self.isAppActive = true
+            self.updateSpectrum()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)){ _ in
+            self.isAppActive = false
+            self.updateSpectrum()
+        }
+        .onAppear{
+            self.isVisible = true
+            self.updateSpectrum()
+        }
         .onDisappear{
+            self.isVisible = false
+            self.updateSpectrum()
             if self.selectedTab == PlayingPage.TAB_VIDEO{
                 self.videoVm.leave()
             }
         }
+    }
+
+    /// 背景:模糊的封面压暗,中间偏上透出一点紫色;颜色跟着每首歌的封面变
+    private var background: some View {
+        GeometryReader{ geo in
+            MusicImage(self.player.music?.logo)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .blur(radius: 46)
+                .saturation(1.25)
+                .overlay(Color.black.opacity(0.6))
+                .overlay(RadialGradient(colors: [Color(red: 40 / 255, green: 30 / 255, blue: 120 / 255).opacity(0.15),
+                                                 Color(red: 5 / 255, green: 7 / 255, blue: 20 / 255).opacity(0.82)],
+                                        center: UnitPoint(x: 0.5, y: 0.36), startRadius: 0, endRadius: max(geo.size.width, geo.size.height) * 0.6))
+        }
+        .background(Color(red: 7 / 255, green: 11 / 255, blue: 24 / 255))
+        .ignoresSafeArea()
+    }
+
+    /// 背景星星是否动:页面显示、App在前台时
+    private var isAnimating: Bool {
+        return self.isVisible && self.isAppActive
+    }
+
+    /// 封面页的波形是否动
+    private var isWaveAnimating: Bool {
+        return self.isAnimating && self.selectedTab == PlayingPage.TAB_COVER
+    }
+
+    /// 只有封面页的波形显示时才计算频谱,关闭波形时不计算
+    private func updateSpectrum() {
+        AudioSpectrum.shared.isEnabled = self.isWaveAnimating && self.currentWaveStyle != .off
+    }
+
+    /// 设置的波形样式
+    private var currentWaveStyle: PlayingWaveStyle {
+        return PlayingWaveStyle(rawValue: self.waveStyle) ?? .bars
     }
 
     /// 视频、封面、歌词左右滑动切换
@@ -253,19 +312,14 @@ struct PlayingPage: View {
             self.videoVm.leave()
         }
         self.lastTab = tab
+        self.updateSpectrum()
     }
 
-    /// 封面
-    /// 页面没有左右边距,封面左右各留36(原来的页面边距16加封面边距20),阴影可以完整显示
+    /// 封面:圆形封面外面一圈跟着音乐起伏的波形
     private var coverView: some View {
-        GeometryReader{ geo in
-            let size = min(geo.size.width - 72, geo.size.height - 40)
-            MusicImage(self.player.music?.logo)
-                .frame(width: size, height: size)
-                .cornerRadius(24)
-                .shadow(radius: 20)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
+        PlayingWaveView(logo: self.player.music?.logo, isPlaying: self.player.isPlaying,
+                        style: self.currentWaveStyle, shockwave: self.waveShockwave, coverColor: self.waveCoverColor, isActive: self.isWaveAnimating)
+            .padding(.horizontal, 8)
     }
 
     /// 歌名、歌手、喜欢和更多按钮
@@ -273,7 +327,10 @@ struct PlayingPage: View {
         HStack(spacing: 12){
             VStack(alignment: .leading, spacing: 4){
                 Text(self.player.music?.nameText ?? "").font(.title2.bold()).lineLimit(1)
-                Text(self.player.collectMsg ?? self.player.music?.artistAlbumText ?? "").font(.subheadline).opacity(0.7).lineLimit(1)
+                Text(self.player.collectMsg ?? self.player.music?.artistAlbumText ?? "")
+                    .font(.subheadline)
+                    .foregroundColor(Color(red: 220 / 255, green: 225 / 255, blue: 1).opacity(0.6))
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -336,14 +393,7 @@ struct PlayingPage: View {
             .accessibilityLabel("上一曲")
             Spacer()
             Button(action: self.player.playOrPause){
-                ZStack{
-                    Image(systemName: self.player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .resizable()
-                        .frame(width: 68, height: 68)
-                    if self.player.isLoading{
-                        ProgressView().tint(.black)
-                    }
-                }
+                PlayingPlayButton(isPlaying: self.player.isPlaying, isLoading: self.player.isLoading)
             }
             .accessibilityLabel(self.player.isPlaying ? "暂停" : "播放")
             Spacer()
@@ -364,35 +414,95 @@ struct PlayingPage: View {
     }
 }
 
-/// 播放进度条,单独一个视图,进度变化时只刷新这一部分
+/// 播放进度条,单独一个视图,进度变化时只刷新这一部分;两边显示时间,点击、拖动跳到对应位置
 private struct PlayingProgressView: View {
 
     @ObservedObject private var progress = PlayerProgress.shared
 
     var body: some View {
-        VStack(spacing: 2){
-            Slider(value: Binding(get: { min(self.progress.currentTime, self.progress.duration) }, set: { self.progress.currentTime = $0 }),
-                   in: 0...max(self.progress.duration, 1)){ isEditing in
-                self.progress.isDragging = isEditing
-                if !isEditing{
-                    PlayerManager.shared.seek(self.progress.currentTime)
+        HStack(spacing: 12){
+            Text(PlayingProgressView.format(self.progress.currentTime)).frame(width: 44, alignment: .leading)
+            GeometryReader{ geo in
+                let ratio = self.progress.duration > 0 ? min(1, max(0, self.progress.currentTime / self.progress.duration)) : 0
+                ZStack(alignment: .leading){
+                    Capsule().fill(Color.white.opacity(0.18)).frame(height: 4)
+                    Capsule().fill(Color(red: 226 / 255, green: 230 / 255, blue: 1)).frame(width: geo.size.width * ratio, height: 4)
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 14, height: 14)
+                        .shadow(color: Color(red: 170 / 255, green: 180 / 255, blue: 1, opacity: 0.9), radius: 6)
+                        .offset(x: geo.size.width * ratio - 7)
                 }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged{
+                        guard self.progress.duration > 0 else{
+                            return
+                        }
+                        self.progress.isDragging = true
+                        self.progress.currentTime = min(1, max(0, $0.location.x / geo.size.width)) * self.progress.duration
+                    }
+                    .onEnded{ _ in
+                        guard self.progress.isDragging else{
+                            return
+                        }
+                        self.progress.isDragging = false
+                        PlayerManager.shared.seek(self.progress.currentTime)
+                    })
             }
-            .tint(.white)
-            .disabled(self.progress.duration == 0)
-            HStack{
-                Text(PlayingProgressView.format(self.progress.currentTime))
-                Spacer()
-                Text(PlayingProgressView.format(self.progress.duration))
+            .frame(height: 24)
+            .accessibilityElement()
+            .accessibilityLabel("播放进度")
+            .accessibilityValue(PlayingProgressView.format(self.progress.currentTime))
+            .accessibilityAdjustableAction{ direction in
+                let step = direction == .increment ? 5.0 : -5.0
+                PlayerManager.shared.seek(min(self.progress.duration, max(0, self.progress.currentTime + step)))
             }
-            .font(.caption.monospacedDigit())
-            .opacity(0.7)
+            Text(PlayingProgressView.format(self.progress.duration)).frame(width: 44, alignment: .trailing)
         }
+        .font(.caption.monospacedDigit())
+        .foregroundColor(.white.opacity(0.6))
     }
 
     /// 格式化播放时间
     private static func format(_ seconds: Double) -> String {
         return ((seconds.isFinite ? seconds : 0) * 1000).timeFormat
+    }
+}
+
+/// 播放、暂停按钮:蓝色渐变的圆形按钮,下方有蓝色光晕,外面一圈淡淡的光环,暂停时光晕变暗
+private struct PlayingPlayButton: View {
+
+    let isPlaying: Bool
+
+    let isLoading: Bool
+
+    /// 按钮大小
+    private static let SIZE: CGFloat = 80
+
+    var body: some View {
+        ZStack{
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 127 / 255, green: 180 / 255, blue: 1), Color(red: 75 / 255, green: 111 / 255, blue: 240 / 255)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .shadow(color: Color(red: 75 / 255, green: 111 / 255, blue: 240 / 255).opacity(self.isPlaying ? 0.55 : 0.35),
+                        radius: self.isPlaying ? 18 : 12, y: self.isPlaying ? 12 : 8)
+                .padding(5)
+                .background(Circle().fill(Color(red: 127 / 255, green: 180 / 255, blue: 1).opacity(self.isPlaying ? 0.12 : 0.06)))
+            if self.isLoading{
+                ProgressView().tint(.white)
+            } else {
+                Image(systemName: self.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundColor(.white)
+
+                    //播放的三角形看起来偏左,往右挪一点
+                    .offset(x: self.isPlaying ? 0 : 3)
+            }
+        }
+        .frame(width: PlayingPlayButton.SIZE, height: PlayingPlayButton.SIZE)
+        .animation(.easeOut(duration: 0.3), value: self.isPlaying)
     }
 }
 

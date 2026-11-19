@@ -235,9 +235,9 @@ class DairoUITestCase: XCTestCase {
 
     /// 在我的页面退出登录
     func logout() {
-        if !self.app.buttons["退出登录"].isHittable{
-            self.app.swipeUp()
-        }
+        //小屏手机上"退出登录"可能被底部的迷你播放条挡住(isHittable判断不出来),先滑到页面底部
+        self.app.swipeUp()
+        self.app.swipeUp()
         self.app.buttons["退出登录"].tap()
         let alert = self.app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5))

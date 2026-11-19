@@ -490,6 +490,9 @@ final class PlayerManager: ObservableObject {
     /// - Parameter isOnline: 是否在线播放,在线播放开始之前超时或者失败时进入离线模式
     private func startPlay(_ music: MusicModel, url: URL, startTime: Double, isOnline: Bool) {
         let item = AVPlayerItem(url: url)
+
+        //播放页的环形波形用的实时频谱
+        AudioSpectrum.shared.attach(to: item)
         let player = AVPlayer(playerItem: item)
         self.player = player
         self.observe(player, item, isOnline: isOnline, startTime: startTime)

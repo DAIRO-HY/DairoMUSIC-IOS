@@ -365,6 +365,15 @@ enum SettingStore {
         }
     }
 
+    /// 播放页环形波形样式的设置名,页面上用AppStorage绑定,值是PlayingWaveStyle
+    static let KEY_PLAYING_WAVE_STYLE = "PLAYING_WAVE_STYLE"
+
+    /// 播放页是否显示低音冲击波的设置名,页面上用AppStorage绑定
+    static let KEY_PLAYING_WAVE_SHOCKWAVE = "PLAYING_WAVE_SHOCKWAVE"
+
+    /// 播放页波形颜色是否跟随封面的设置名,页面上用AppStorage绑定
+    static let KEY_PLAYING_WAVE_COVER_COLOR = "PLAYING_WAVE_COVER_COLOR"
+
     /// 播放页左右滑动的引导是否已经显示过,UI测试时通过启动参数跳过引导
     static var playingGuideShown: Bool{
         get{ UserDefaults.standard.bool(forKey: "PLAYING_GUIDE_SHOWN") }
