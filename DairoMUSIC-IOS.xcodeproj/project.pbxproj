@@ -389,6 +389,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "DairoMUSIC-IOS/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Dairo音乐";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于把下载的歌曲视频保存到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "用于选择头像和歌单封面";
@@ -426,6 +427,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "DairoMUSIC-IOS/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Dairo音乐";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于把下载的歌曲视频保存到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "用于选择头像和歌单封面";
