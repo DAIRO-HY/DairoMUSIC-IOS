@@ -46,6 +46,9 @@ struct AboutPage: View {
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .padding()
+
+                            //文字不够一行宽时,背景也要和其他分组一样宽
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
