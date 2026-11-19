@@ -102,6 +102,11 @@ final class PlayerManager: ObservableObject {
     /// 等待采集完成的任务,切换歌曲时取消
     private var collectTask: Task<Void, Never>?
 
+    /// 准备歌曲时的后台任务
+    /// 后台切换歌曲时,上一首已经停了、下一首还没有出声(获取详情、等待采集、下载缓冲),系统会把App挂起,下载停止之后一直播放不了
+    /// 准备期间申请后台运行时间,开始出声、暂停、停止时结束
+    private var loadingTask: UIBackgroundTaskIdentifier = .invalid
+
     /// 等待采集完成的最多次数,每秒查询一次
     private static let COLLECT_MAX_TIMES = 180
 
@@ -195,6 +200,7 @@ final class PlayerManager: ObservableObject {
             self.releasePlayer()
         }
         self.player?.pause()
+        self.endLoadingTask()
         self.savePlayingInfo()
     }
 
@@ -331,6 +337,7 @@ final class PlayerManager: ObservableObject {
     /// 清空播放列表,停止播放
     func stop() {
         self.releasePlayer()
+        self.endLoadingTask()
         self.playList = []
         self.index = 0
         self.favoriteId = FavoriteId.NONE
@@ -360,6 +367,7 @@ final class PlayerManager: ObservableObject {
     /// - Parameter direction: 离线时当前歌曲不能播放,往哪个方向找能播放的歌曲,1:往后 -1:往前
     private func load(startTime: Double, direction: Int = 1) {
         self.releasePlayer()
+        self.beginLoadingTask()
         self.isSeekedToEnd = false
         guard let music = self.music else{
             return
@@ -609,6 +617,11 @@ final class PlayerManager: ObservableObject {
             self.isPlaying = status != .paused
             self.isLoading = status == .waitingToPlayAtSpecifiedRate
 
+            //已经出声,系统不会再挂起App,结束准备歌曲的后台任务
+            if status == .playing{
+                self.endLoadingTask()
+            }
+
             //在线播放途中一直在等待缓冲(网络中断)时,超时之后处理,不能一直卡在那里
             if isOnline && self.isStarted && status == .waitingToPlayAtSpecifiedRate{
                 self.startStallTimeout(player)
@@ -675,6 +688,25 @@ final class PlayerManager: ObservableObject {
         Toast.show(msg + ",自动播放下一曲")
         self.index = self.nextIndex
         self.load(startTime: 0)
+    }
+
+    /// 开始准备歌曲的后台任务,已经开始时不重复申请;系统给的时间用完时结束
+    private func beginLoadingTask() {
+        if self.loadingTask != .invalid{
+            return
+        }
+        self.loadingTask = UIApplication.shared.beginBackgroundTask(withName: "准备歌曲"){ [weak self] in
+            self?.endLoadingTask()
+        }
+    }
+
+    /// 结束准备歌曲的后台任务
+    private func endLoadingTask() {
+        if self.loadingTask == .invalid{
+            return
+        }
+        UIApplication.shared.endBackgroundTask(self.loadingTask)
+        self.loadingTask = .invalid
     }
 
     /// 释放当前歌曲的播放器
