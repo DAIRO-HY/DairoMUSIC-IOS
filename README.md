@@ -4,6 +4,14 @@
 
 DairoMUSIC 是一个可以自己部署的音乐服务器，这个 App 本身不提供任何歌曲，需要连接你自己（或者朋友）部署的 DairoMUSIC 服务器才能使用。服务器的部署方法请看 [DairoMUSIC](https://github.com/DAIRO-HY/DairoMUSIC)。
 
+## 截图
+
+| 发现 | 播放 | 歌单 | 音乐（黑暗模式） |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/discover.jpg" width="200"> | <img src="docs/screenshots/playing.jpg" width="200"> | <img src="docs/screenshots/playlist.jpg" width="200"> | <img src="docs/screenshots/music.jpg" width="200"> |
+
+截图中的歌曲是 [Musopen](https://musopen.org/) 的公有领域古典音乐录音，封面和轮播图是程序生成的图案。
+
 ## 功能
 
 - **发现**：服务器后台配置的轮播图和推荐歌单
