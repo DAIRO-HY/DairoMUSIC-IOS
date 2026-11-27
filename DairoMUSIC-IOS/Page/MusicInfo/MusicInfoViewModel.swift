@@ -99,7 +99,7 @@ class MusicInfoViewModel: ObservableObject {
     /// 下载选择的音质
     func onDownloadClick(_ quality: DownloadQuality){
         MusicDownloadUtil.download(self.music, quality: quality)
-        self.downloadedText = self.downloadedText ?? "下载中"
+        self.downloadedText = self.downloadedText ?? "离线缓存中"
 
         //添加下载任务之后刷新,可以删除正在下载的
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
@@ -111,7 +111,7 @@ class MusicInfoViewModel: ObservableObject {
     /// - Parameter infos: 要删除的下载
     func onDeleteDownloadClick(_ infos: [CacheInfo]){
         MusicDownloadUtil.delete(infos.map{ $0.id })
-        Toast.show("已删除下载")
+        Toast.show("已删除离线缓存")
         self.updateDownload()
     }
 
@@ -119,7 +119,7 @@ class MusicInfoViewModel: ObservableObject {
     func downloadLabel(_ info: CacheInfo) -> String {
         let file = FileSdkUtil.musicFileId(info.key).flatMap{ self.music.file(id: $0) }
         let size = (info.size.map{ Int64($0) } ?? file?.size)?.fileSize ?? ""
-        let state = info.state == .finish ? "" : "(下载中)"
+        let state = info.state == .finish ? "" : "(离线缓存中)"
         return MusicModel.qualityText(file?.bitRate) + "  " + size + state
     }
 

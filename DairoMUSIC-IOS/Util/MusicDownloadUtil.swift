@@ -58,9 +58,9 @@ enum MusicDownloadUtil {
     static func downloadedText(_ musicId: Int64) -> String? {
         let list = MusicDownloadUtil.downloads(musicId)
         if list.contains(where: { $0.state == .finish }){
-            return "已下载"
+            return "已离线缓存"
         }
-        return list.isEmpty ? nil : "下载中"
+        return list.isEmpty ? nil : "离线缓存中"
     }
 
     /// 一首歌的所有下载,包括还没有下载完成的
@@ -92,10 +92,10 @@ enum MusicDownloadUtil {
     /// 添加一首歌的下载任务
     private static func add(_ music: MusicModel, quality: DownloadQuality) {
         guard let file = music.file(bitRate: quality.bitRate), let source = FileSource.music(music, file: file) else{
-            Toast.show("歌曲还在处理中,请稍后再下载")
+            Toast.show("歌曲还在处理中,请稍后再离线缓存")
             return
         }
-        Toast.show(FileSdkUtil.download(source) ? "已加入下载列表" : "添加下载失败")
+        Toast.show(FileSdkUtil.download(source) ? "已加入离线缓存列表" : "添加离线缓存失败")
     }
 
     /// 下载列表里的所有歌曲,每首歌选择不超过目标音质的最高音质文件,还没有入库或者还没有文件的歌曲跳过
@@ -114,11 +114,11 @@ enum MusicDownloadUtil {
             }
         }
         if count == 0{
-            Toast.show("没有可以下载的歌曲")
+            Toast.show("没有可以离线缓存的歌曲")
         } else if count < musicList.count{
-            Toast.show("已加入下载列表\(count)首,\(musicList.count - count)首暂时不能下载")
+            Toast.show("已加入离线缓存列表\(count)首,\(musicList.count - count)首暂时不能离线缓存")
         } else {
-            Toast.show("已加入下载列表\(count)首")
+            Toast.show("已加入离线缓存列表\(count)首")
         }
     }
 

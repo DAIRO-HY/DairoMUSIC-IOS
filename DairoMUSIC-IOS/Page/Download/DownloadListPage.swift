@@ -203,13 +203,13 @@ private struct DownloadItemView: View {
             return [detail, sizeText ?? ""].filter{ !$0.isEmpty }.joined(separator: " · ")
         case .downloading:
             let downloaded = Int64(self.info.downloaded).fileSize
-            return "下载中 \(Int(self.progress * 100))% · " + (sizeText.map{ downloaded + "/" + $0 } ?? downloaded)
+            return "离线缓存中 \(Int(self.progress * 100))% · " + (sizeText.map{ downloaded + "/" + $0 } ?? downloaded)
         case .waiting:
-            return "等待下载"
+            return "等待离线缓存"
         case .paused:
             return "已暂停 \(Int(self.progress * 100))%"
         case .error:
-            return "下载失败" + (self.info.error.map{ ":" + $0 } ?? "")
+            return "离线缓存失败" + (self.info.error.map{ ":" + $0 } ?? "")
         }
     }
 
@@ -217,11 +217,11 @@ private struct DownloadItemView: View {
     private var stateIcon: (name: String, label: String)? {
         switch self.info.state{
         case .downloading, .waiting:
-            return ("pause.circle", "暂停下载")
+            return ("pause.circle", "暂停离线缓存")
         case .paused:
-            return ("arrow.down.circle", "继续下载")
+            return ("arrow.down.circle", "继续离线缓存")
         case .error:
-            return ("arrow.clockwise.circle", "重新下载")
+            return ("arrow.clockwise.circle", "重新离线缓存")
         case .finish:
             return nil
         }

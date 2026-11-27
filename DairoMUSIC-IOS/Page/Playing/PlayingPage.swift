@@ -151,7 +151,7 @@ struct PlayingPage: View {
             Button("取消离线模式", action: self.player.exitOffline)
             Button("保持", role: .cancel){}
         } message: {
-            Text("离线模式下只播放已经下载或缓存的歌曲，取消之后从下一首开始尝试在线播放")
+            Text("离线模式下只播放已经离线缓存或缓存的歌曲，取消之后从下一首开始尝试在线播放")
         }
         //弹出的页面用RootView包起来,Toast和Loading显示在弹出的页面上
         .sheet(isPresented: self.$showPlayList){

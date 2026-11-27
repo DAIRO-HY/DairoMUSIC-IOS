@@ -26,7 +26,7 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         searchField.typeText("测试歌手A\n")
         XCTAssertTrue(self.app.staticTexts["晴空之歌"].waitForExistence(timeout: 10))
         self.app.cells.containing(.staticText, identifier: "晴空之歌").firstMatch.buttons["更多操作"].tap()
-        let download = self.app.button(startsWith: "下载")
+        let download = self.app.button(startsWith: "离线缓存")
         XCTAssertTrue(download.waitForExistence(timeout: 5))
         download.tap()
         //选项是这首歌所有音质的文件和大小,例如:超高品质(320K)  1.5MB
@@ -35,7 +35,7 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         XCTAssertTrue(self.app.button(startsWith: "标准(128K)").exists)
         self.shot("选择音质")
         quality.tap()
-        self.waitToast("已加入下载列表")
+        self.waitToast("已加入离线缓存列表")
         self.dismissSheet()
         self.back()
 
@@ -43,23 +43,23 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         let favorite = self.app.buttons["测试推荐·中文"].firstMatch
         XCTAssertTrue(favorite.waitForExistence(timeout: 10))
         favorite.tap()
-        let downloadAll = self.app.buttons["全部下载"]
+        let downloadAll = self.app.buttons["全部离线缓存"]
         XCTAssertTrue(downloadAll.waitForExistence(timeout: 10))
         self.shot("歌单")
         downloadAll.tap()
         let standard = self.app.buttons["标准(128K)"]
         XCTAssertTrue(standard.waitForExistence(timeout: 5))
         standard.tap()
-        self.waitToast("已加入下载列表3首")
+        self.waitToast("已加入离线缓存列表3首")
         self.back()
 
         //缓存管理里的已下载的歌曲:晴空之歌320K和歌单里的3首128K
         self.app.buttons["我的"].tap()
         self.app.button(startsWith: "缓存管理").tap()
-        let musicDownloads = self.app.button(startsWith: "已下载的歌曲")
+        let musicDownloads = self.app.button(startsWith: "已离线缓存的歌曲")
         XCTAssertTrue(musicDownloads.waitForExistence(timeout: 5))
         musicDownloads.tap()
-        XCTAssertTrue(self.app.navigationBars["已下载的歌曲"].waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.navigationBars["已离线缓存的歌曲"].waitForExistence(timeout: 5))
         XCTAssertTrue(self.app.cells.element(boundBy: 3).waitForExistence(timeout: 10))
         XCTAssertEqual(self.app.cells.count, 4)
         self.shot("下载中")
@@ -101,24 +101,24 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
 
         //回到缓存管理,显示已下载的数量
         self.back()
-        XCTAssertTrue(self.app.button(startsWith: "已下载的歌曲").waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.button(startsWith: "已离线缓存的歌曲").waitForExistence(timeout: 5))
         XCTAssertTrue(self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1首")).firstMatch.waitForExistence(timeout: 5))
         self.shot("缓存管理")
 
         //全部删除
-        self.app.button(startsWith: "已下载的歌曲").tap()
+        self.app.button(startsWith: "已离线缓存的歌曲").tap()
         XCTAssertTrue(self.app.buttons["全部删除"].waitForExistence(timeout: 5))
         self.app.buttons["全部删除"].tap()
         let alert = self.app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         alert.buttons["删除"].tap()
-        XCTAssertTrue(self.app.staticTexts["没有下载的歌曲"].waitForExistence(timeout: 10))
+        XCTAssertTrue(self.app.staticTexts["没有离线缓存的歌曲"].waitForExistence(timeout: 10))
         self.shot("全部删除之后")
         self.back()
 
         //已下载的视频页面
-        self.app.button(startsWith: "已下载的视频").tap()
-        XCTAssertTrue(self.app.navigationBars["已下载的视频"].waitForExistence(timeout: 5))
+        self.app.button(startsWith: "已离线缓存的视频").tap()
+        XCTAssertTrue(self.app.navigationBars["已离线缓存的视频"].waitForExistence(timeout: 5))
         self.back()
         self.back()
         self.logout()
@@ -137,37 +137,37 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
         //下载标准和超高品质两种音质
         for quality in ["标准(128K)", "超高品质(320K)"]{
             self.openInfo("晴空之歌")
-            self.app.button(startsWith: "下载").tap()
+            self.app.button(startsWith: "离线缓存").tap()
             let button = self.app.button(startsWith: quality)
             XCTAssertTrue(button.waitForExistence(timeout: 5))
             button.tap()
-            self.waitToast("已加入下载列表")
+            self.waitToast("已加入离线缓存列表")
             self.dismissSheet()
             Thread.sleep(forTimeInterval: 3)
         }
 
         //下载了多种音质,当前音质显示音质最好的
         self.openInfo("晴空之歌")
-        XCTAssertTrue(self.currentQuality().contains("超高品质(320K)(已下载)"), self.currentQuality())
+        XCTAssertTrue(self.currentQuality().contains("超高品质(320K)(已离线缓存)"), self.currentQuality())
         self.shot("下载之后的歌曲信息")
 
         //选择删除超高品质
-        self.app.button(startsWith: "删除下载").tap()
+        self.app.button(startsWith: "删除离线缓存").tap()
         let delete320 = self.app.button(startsWith: "超高品质(320K)")
         XCTAssertTrue(delete320.waitForExistence(timeout: 5))
         XCTAssertTrue(self.app.buttons["全部删除"].exists)
         self.shot("选择删除哪种音质")
         delete320.tap()
-        self.waitToast("已删除下载")
-        XCTAssertTrue(self.currentQuality().contains("标准(128K)(已下载)"), self.currentQuality())
+        self.waitToast("已删除离线缓存")
+        XCTAssertTrue(self.currentQuality().contains("标准(128K)(已离线缓存)"), self.currentQuality())
 
         //只剩一种音质,确认之后删除,之后按设置的播放音质(超高品质)显示
-        self.app.button(startsWith: "删除下载").tap()
+        self.app.button(startsWith: "删除离线缓存").tap()
         let alert = self.app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         alert.buttons["删除"].tap()
-        self.waitToast("已删除下载")
-        XCTAssertFalse(self.app.button(startsWith: "删除下载").exists)
+        self.waitToast("已删除离线缓存")
+        XCTAssertFalse(self.app.button(startsWith: "删除离线缓存").exists)
         XCTAssertEqual(self.currentQuality(), "当前音质：超高品质(320K)")
         self.shot("删除下载之后")
         self.dismissSheet()
@@ -179,7 +179,7 @@ final class DairoMUSICDownloadUITests: DairoUITestCase {
     /// 打开搜索结果里的歌曲信息
     private func openInfo(_ name: String) {
         self.app.cells.containing(.staticText, identifier: name).firstMatch.buttons["更多操作"].tap()
-        XCTAssertTrue(self.app.button(startsWith: "下载").waitForExistence(timeout: 5))
+        XCTAssertTrue(self.app.button(startsWith: "离线缓存").waitForExistence(timeout: 5))
     }
 
     /// 歌曲信息页的当前音质

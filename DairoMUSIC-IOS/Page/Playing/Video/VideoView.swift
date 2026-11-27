@@ -63,20 +63,20 @@ struct VideoView: View {
         } message: {
             Text("当前音乐未收藏，只能播放原画版，原画需要消耗更多流量，是否继续播放？")
         }
-        .confirmationDialog(self.vm.isDownloaded ? "已下载" : "下载视频", isPresented: self.$vm.showDownloadMenu, titleVisibility: .visible){
+        .confirmationDialog(self.vm.isDownloaded ? "已离线缓存" : "离线缓存视频", isPresented: self.$vm.showDownloadMenu, titleVisibility: .visible){
             let vip = self.vm.isFileOutVipOnly ? "(VIP)" : ""
             if !self.vm.isDownloaded{
-                Button("只下载"){
+                Button("只离线缓存"){
                     self.vm.onDownloadAction(nil)
                 }
             }
             if self.vm.allowSaveAlbum{
-                Button((self.vm.isDownloaded ? "保存到相册" : "下载并保存到相册") + vip){
+                Button((self.vm.isDownloaded ? "保存到相册" : "离线缓存并保存到相册") + vip){
                     self.vm.onDownloadAction(.saveAlbum)
                 }
             }
             if self.vm.allowSendFile{
-                Button((self.vm.isDownloaded ? "发送文件" : "下载并发送文件") + vip){
+                Button((self.vm.isDownloaded ? "发送文件" : "离线缓存并发送文件") + vip){
                     self.vm.onDownloadAction(.send)
                 }
             }
@@ -102,7 +102,7 @@ struct VideoView: View {
                 if let percent = self.vm.downloadPercent{
                     Label("\(percent)%", systemImage: "arrow.down.circle")
                 } else {
-                    Label(self.vm.isDownloaded ? "已下载" : "下载", systemImage: self.vm.isDownloaded ? "checkmark.circle" : "arrow.down.circle")
+                    Label(self.vm.isDownloaded ? "已离线缓存" : "离线缓存", systemImage: self.vm.isDownloaded ? "checkmark.circle" : "arrow.down.circle")
                 }
             }
             .disabled(!self.vm.canDownload)

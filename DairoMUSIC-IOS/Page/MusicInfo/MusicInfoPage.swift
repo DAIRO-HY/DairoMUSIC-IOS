@@ -76,7 +76,7 @@ struct MusicInfoPage: View {
                     }
                     SettingButton("分享", action: self.vm.onShareClick)
                         .icon("square.and.arrow.up", backgroundColor: .blue)
-                    SettingButton("下载", tip: self.vm.downloadedText){
+                    SettingButton("离线缓存", tip: self.vm.downloadedText){
                         self.showDownloadPicker = true
                     }
                     .icon("arrow.down.circle.fill", backgroundColor: .green)
@@ -89,7 +89,7 @@ struct MusicInfoPage: View {
 
                     //已经下载的可以删除,不允许下载时也可以删除
                     if !self.vm.downloads.isEmpty{
-                        SettingButton("删除下载"){
+                        SettingButton("删除离线缓存"){
                             if self.vm.downloads.count == 1{
                                 self.showDeleteDownloadAlert = true
                             } else {
@@ -137,7 +137,7 @@ struct MusicInfoPage: View {
             }
             Button("取消", role: .cancel){}
         }
-        .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
+        .confirmationDialog("选择离线缓存的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
             ForEach(MusicDownloadUtil.qualities(music), id: \.self){ quality in
                 Button(quality.label){
                     self.vm.onDownloadClick(quality)
@@ -145,7 +145,7 @@ struct MusicInfoPage: View {
             }
             Button("取消", role: .cancel){}
         }
-        .alert("确定删除下载的歌曲吗？", isPresented: self.$showDeleteDownloadAlert){
+        .alert("确定删除离线缓存的歌曲吗？", isPresented: self.$showDeleteDownloadAlert){
             Button("删除", role: .destructive){
                 self.vm.onDeleteDownloadClick(self.vm.downloads)
             }
@@ -153,7 +153,7 @@ struct MusicInfoPage: View {
         } message: {
             Text(self.vm.downloads.first.map{ self.vm.downloadLabel($0) } ?? "")
         }
-        .confirmationDialog("删除下载", isPresented: self.$showDeleteDownloadPicker, titleVisibility: .visible){
+        .confirmationDialog("删除离线缓存", isPresented: self.$showDeleteDownloadPicker, titleVisibility: .visible){
             ForEach(self.vm.downloads, id: \.id){ info in
                 Button(self.vm.downloadLabel(info), role: .destructive){
                     self.vm.onDeleteDownloadClick([info])

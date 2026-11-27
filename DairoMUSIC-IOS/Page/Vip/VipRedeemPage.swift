@@ -19,7 +19,7 @@ struct VipRedeemPage: View {
     var body: some View {
         SettingStack(embedInNavigationStack: false) {
             SettingPage(title: "VIP会员") {
-                SettingGroup(footer: "VIP可以听超高品质、无损音质的歌曲,看原画视频,下载歌曲和视频"){
+                SettingGroup(footer: "VIP可以听超高品质、无损音质的歌曲,看原画视频,离线缓存歌曲和视频"){
                     SettingText(title: "VIP状态：" + self.statusText)
                 }
                 SettingGroup(header: "兑换VIP", footer: "卡号是16位数字,卡密不区分大小写"){

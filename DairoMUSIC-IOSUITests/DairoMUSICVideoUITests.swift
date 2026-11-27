@@ -47,12 +47,12 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         self.shot("原画")
 
         //下载当前清晰度,服务器允许保存到相册或者发送文件时会先选择
-        self.app.buttons["下载"].tap()
-        let onlyDownload = self.app.buttons["只下载"]
+        self.app.buttons["离线缓存"].tap()
+        let onlyDownload = self.app.buttons["只离线缓存"]
         if onlyDownload.waitForExistence(timeout: 3){
             onlyDownload.tap()
         }
-        XCTAssertTrue(self.app.buttons["已下载"].waitForExistence(timeout: 120))
+        XCTAssertTrue(self.app.buttons["已离线缓存"].waitForExistence(timeout: 120))
         self.shot("下载完成")
 
         //下一个视频,播放列表里的另一首稻香;下一个视频按钮在视频中间,和播放按钮一起显示
@@ -116,8 +116,8 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
     func testSaveAlbum() throws {
         self.loginTemp()
         self.openVideo("稻香", "稻香 周杰伦")
-        self.app.buttons["下载"].tap()
-        let save = self.app.buttons["下载并保存到相册"]
+        self.app.buttons["离线缓存"].tap()
+        let save = self.app.buttons["离线缓存并保存到相册"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "服务器需要允许保存到相册")
         save.tap()
 
@@ -130,7 +130,7 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         }
         self.waitToast("已保存到相册")
         self.shot("已保存到相册")
-        XCTAssertTrue(self.app.buttons["已下载"].exists)
+        XCTAssertTrue(self.app.buttons["已离线缓存"].exists)
         self.closeVideoAndLogout()
     }
 
@@ -306,9 +306,9 @@ final class DairoMUSICVideoUITests: DairoUITestCase {
         try XCTSkipIf(config?["allowSaveAlbum"] as? Bool != false || config?["allowSendFile"] as? Bool != false, "服务器允许保存到相册或者发送文件,跳过")
         self.loginTemp()
         self.openVideo("稻香", "稻香 周杰伦")
-        self.app.buttons["下载"].tap()
-        XCTAssertFalse(self.app.buttons["下载并保存到相册"].waitForExistence(timeout: 3), "不允许保存到相册时不应该询问")
-        let downloaded = self.app.buttons["已下载"]
+        self.app.buttons["离线缓存"].tap()
+        XCTAssertFalse(self.app.buttons["离线缓存并保存到相册"].waitForExistence(timeout: 3), "不允许保存到相册时不应该询问")
+        let downloaded = self.app.buttons["已离线缓存"]
         XCTAssertTrue(downloaded.waitForExistence(timeout: 120))
         XCTAssertFalse(downloaded.isEnabled, "已经下载并且不允许保存到相册、发送文件时不能再点")
         self.shot("不允许保存到相册")

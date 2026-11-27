@@ -520,14 +520,14 @@ class VideoViewModel: ObservableObject {
         }, finish: { [weak self] path, error in
             self?.downloadPercent = nil
             guard let path else{
-                Toast.show("下载失败:" + (error ?? ""))
+                Toast.show("离线缓存失败:" + (error ?? ""))
                 return
             }
             self?.isDownloaded = true
             if let action{
                 self?.perform(action, path: path)
             } else {
-                Toast.show("下载完成")
+                Toast.show("离线缓存完成")
             }
         })
     }

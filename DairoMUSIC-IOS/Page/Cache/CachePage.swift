@@ -29,12 +29,12 @@ struct CachePage: View {
                     SettingToggle(title: "音乐边播边缓存", isOn: self.$musicCache)
                     SettingToggle(title: "视频边播边缓存", isOn: self.$videoCache)
                 }
-                SettingGroup(footer: "下载的歌曲和视频永久保存,清理缓存时不会删除"){
-                    SettingNavigationLink("已下载的歌曲", tip: self.vm.downloadMusicText){
+                SettingGroup(footer: "离线缓存的歌曲和视频永久保存,清理缓存时不会删除"){
+                    SettingNavigationLink("已离线缓存的歌曲", tip: self.vm.downloadMusicText){
                         DownloadListPage(.music).anyView
                     }
                     .icon("arrow.down.circle.fill", backgroundColor: Color.green)
-                    SettingNavigationLink("已下载的视频", tip: self.vm.downloadVideoText){
+                    SettingNavigationLink("已离线缓存的视频", tip: self.vm.downloadVideoText){
                         DownloadListPage(.video).anyView
                     }
                     .icon("arrow.down.circle.fill", backgroundColor: Color.orange)
@@ -53,7 +53,7 @@ struct CachePage: View {
                     }
                     .icon("photo.fill", backgroundColor: Color.blue)
                 }
-                SettingGroup(footer: "超过保存期限没有播放的缓存会定期清理,超过上限时清理最久没有播放的缓存;下载的歌曲和视频不会被清理"){
+                SettingGroup(footer: "超过保存期限没有播放的缓存会定期清理,超过上限时清理最久没有播放的缓存;离线缓存的歌曲和视频不会被清理"){
                     SettingPicker("缓存保存期限", data: CacheViewModel.EXPIRE_DAYS_DATA, value: self.$vm.expireDays, changeFunc: self.vm.onExpireDaysChange)
                         .icon("timer", backgroundColor: Color.orange)
                     SettingPicker("缓存上限", data: CacheViewModel.MAX_SIZE_DATA, value: self.$vm.maxSize, changeFunc: self.vm.onMaxSizeChange)

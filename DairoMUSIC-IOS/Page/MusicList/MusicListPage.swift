@@ -97,7 +97,7 @@ struct MusicListPage: View {
                 MusicInfoPage(music, favoriteId: self.vm.isMine ? self.vm.favoriteId : nil)
             }
         }
-        .confirmationDialog("选择下载的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
+        .confirmationDialog("选择离线缓存的音质", isPresented: self.$showDownloadPicker, titleVisibility: .visible){
             ForEach(MusicDownloadUtil.listQualities, id: \.self){ quality in
                 Button(quality.label){
                     MusicDownloadUtil.downloadAll(self.vm.musicList, quality: quality)
@@ -105,7 +105,7 @@ struct MusicListPage: View {
             }
             Button("取消", role: .cancel){}
         } message: {
-            Text("歌曲没有选择的音质时下载最接近的音质")
+            Text("歌曲没有选择的音质时离线缓存最接近的音质")
         }
         .alert("确定清空最近播放吗？", isPresented: self.$showClearAlert){
             Button("清空", role: .destructive, action: self.vm.clearRecent)
@@ -143,7 +143,7 @@ struct MusicListPage: View {
                         Button(action: {
                             self.showDownloadPicker = true
                         }){
-                            Label("全部下载", systemImage: "arrow.down.circle")
+                            Label("全部离线缓存", systemImage: "arrow.down.circle")
                                 .font(.footnote)
                                 .foregroundColor(.theme)
                         }

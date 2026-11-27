@@ -12,7 +12,7 @@ import DairoUI_IOS
 struct AboutPage: View {
 
     /// 免责声明
-    private static let DISCLAIMER = "Dairo音乐是一个音乐播放客户端，本身不提供任何音乐、视频内容。App里播放和下载的内容全部来自你自己填写的服务器，由服务器的管理者负责。请只播放和下载你有权使用的内容，尊重音乐版权，不要用于商业用途。"
+    private static let DISCLAIMER = "Dairo音乐是一个音乐播放客户端，本身不提供任何音乐、视频内容。App里播放和离线缓存的内容全部来自你自己填写的服务器，由服务器的管理者负责。请只播放和离线缓存你有权使用的内容，尊重音乐版权，不要用于商业用途。"
 
     /// 检查到的新版本
     @State private var newVersion: AppVersionModel?

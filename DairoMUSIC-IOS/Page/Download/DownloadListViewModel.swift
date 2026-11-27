@@ -25,17 +25,17 @@ enum DownloadType {
 
     /// 页面标题
     var title: String {
-        return self == .music ? "已下载的歌曲" : "已下载的视频"
+        return self == .music ? "已离线缓存的歌曲" : "已离线缓存的视频"
     }
 
     /// 没有下载时的提示
     var emptyText: String {
-        return self == .music ? "没有下载的歌曲" : "没有下载的视频"
+        return self == .music ? "没有离线缓存的歌曲" : "没有离线缓存的视频"
     }
 
     /// 全部删除的确认框标题
     var deleteAllTitle: String {
-        return self == .music ? "确定删除全部已下载的歌曲吗？" : "确定删除全部已下载的视频吗？"
+        return self == .music ? "确定删除全部已离线缓存的歌曲吗？" : "确定删除全部已离线缓存的视频吗？"
     }
 }
 

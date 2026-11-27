@@ -60,7 +60,7 @@ enum MusicFileResolver {
         guard let local = MusicFileResolver.local(music, anyQuality: false), let file = local.file else{
             return (music.settingFile, nil)
         }
-        return (file, local.isDownloaded ? "已下载" : "已缓存")
+        return (file, local.isDownloaded ? "已离线缓存" : "已缓存")
     }
 
     /// 音质最好的文件,按比特率比较,文件信息里没有的(歌曲信息过期了)按文件大小比较
